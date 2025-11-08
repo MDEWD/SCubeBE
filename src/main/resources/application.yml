@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: scube
+  profiles:
+    active: dev
+
+server:
+  port: 8077
