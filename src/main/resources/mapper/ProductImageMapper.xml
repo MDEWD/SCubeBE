@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scube.scubebackend.mapper.ProductImageMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.scube.scubebackend.model.entity.ProductImage">
+        <id column="id" property="id" />
+        <result column="product_id" property="productId" />
+        <result column="image_url" property="imageUrl" />
+        <result column="sort_order" property="sortOrder" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+    
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, product_id, image_url, sort_order, create_time
+    </sql>
+    
+</mapper>
+
