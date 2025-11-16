@@ -1,5 +1,6 @@
 package com.scube.scubebackend.model.dto;
 
+import com.scube.scubebackend.common.ErrorCode;
 import lombok.Data;
 
 @Data
@@ -33,6 +34,10 @@ public class BaseResponse<T> {
     
     public static <T> BaseResponse<T> error(String message) {
         return error(50000, message);
+    }
+    
+    public static <T> BaseResponse<T> error(ErrorCode errorCode) {
+        return error(errorCode.getCode(), errorCode.getMessage());
     }
 }
 
