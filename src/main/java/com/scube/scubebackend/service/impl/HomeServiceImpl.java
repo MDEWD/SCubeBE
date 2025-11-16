@@ -10,7 +10,7 @@ import com.scube.scubebackend.model.dto.ProductListVO;
 import com.scube.scubebackend.model.dto.ServiceVO;
 import com.scube.scubebackend.model.entity.Carousel;
 import com.scube.scubebackend.model.entity.Product;
-import com.scube.scubebackend.model.entity.Service;
+import com.scube.scubebackend.model.entity.ServiceInfo;
 import com.scube.scubebackend.service.HomeService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +68,7 @@ public class HomeServiceImpl implements HomeService {
     
     @Override
     public List<ServiceVO> getServices() {
-        List<Service> services = serviceMapper.selectList(null);
+        List<ServiceInfo> services = serviceMapper.selectList(null);
         return services.stream().map(service -> {
             ServiceVO vo = new ServiceVO();
             BeanUtils.copyProperties(service, vo);
