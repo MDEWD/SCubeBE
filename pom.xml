@@ -118,6 +118,13 @@
             <artifactId>weixin-java-mp</artifactId>
             <version>4.5.0</version>
         </dependency>
+        
+        <!-- XML解析 -->
+        <dependency>
+            <groupId>org.dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+            <version>2.1.4</version>
+        </dependency>
 
         <!-- 文件上传 -->
         <dependency>

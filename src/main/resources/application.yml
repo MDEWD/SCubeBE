@@ -21,10 +21,11 @@ server:
 
 wechat:
   mp:
-    app-id: your-app-id
-    secret: your-secret
-    token: your-token
-    aes-key: your-aes-key
+    # 微信测试号配置（从 https://mp.weixin.qq.com/debug/cgi-bin/sandboxinfo 获取）
+    app-id: wxf10bccf1a861aeb7                    # 测试号AppID
+    secret: 832b070364fdd4a6c83da1fbd8a0299f      # 测试号AppSecret
+    token: 123456                                  # 自定义Token（用于验证签名，需与测试号后台配置一致）
+    aes-key:                                       # 消息加解密密钥（可选，测试环境可以不填）
 
 jwt:
   secret: scube-secret-key-for-jwt-token-generation-minimum-256-bits
