@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scube.scubebackend.mapper.CommentMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.scube.scubebackend.model.entity.Comment">
+        <id column="id" property="id" />
+        <result column="product_id" property="productId" />
+        <result column="user_id" property="userId" />
+        <result column="content" property="content" />
+        <result column="rating" property="rating" />
+        <result column="likes" property="likes" />
+        <result column="dislikes" property="dislikes" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="is_delete" property="isDelete" />
+    </resultMap>
+    
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, product_id, user_id, content, rating, likes, dislikes, 
+        create_time, update_time, is_delete
+    </sql>
+    
+    <!-- 计算商品平均评分 -->
+    <select id="calculateAverageRating" resultType="java.math.BigDecimal">
+        SELECT COALESCE(AVG(rating), 0.00) as avg_rating
+        FROM comment
+        WHERE product_id = #{productId} AND is_delete = 0
+    </select>
+    
+</mapper>
+

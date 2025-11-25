@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @TableName("service")
-public class Service {
+public class ServiceInfo {
     @TableId(type = IdType.AUTO)
     private Long id;
     

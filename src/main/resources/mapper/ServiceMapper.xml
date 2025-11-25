@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scube.scubebackend.mapper.ServiceMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.scube.scubebackend.model.entity.ServiceInfo">
+        <id column="id" property="id" />
+        <result column="icon" property="icon" />
+        <result column="title" property="title" />
+        <result column="description" property="description" />
+    </resultMap>
+    
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, icon, title, description
+    </sql>
+    
+</mapper>
+
