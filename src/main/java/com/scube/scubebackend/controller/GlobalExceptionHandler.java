@@ -28,7 +28,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public BaseResponse<?> handleException(Exception e) {
         log.error("系统异常：", e);
-        return BaseResponse.error(ErrorCode.SYSTEM_ERROR);
+        // 开发环境返回详细错误信息，生产环境只返回通用错误
+        String message = "系统内部异常";
+        if (e.getMessage() != null && !e.getMessage().isEmpty()) {
+            message = e.getMessage();
+        }
+        return BaseResponse.error(ErrorCode.SYSTEM_ERROR.getCode(), message);
     }
 }
 

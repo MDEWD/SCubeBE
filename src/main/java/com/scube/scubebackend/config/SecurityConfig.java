@@ -26,7 +26,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/health", "/actuator/**").permitAll()
-                .requestMatchers("/api/user/login", "/api/user/qr-code", "/api/user/check-ticket",
+                .requestMatchers("/api/user/login", "/api/user/logout", "/api/user/qr-code", "/api/user/check-ticket",
                     "/api/wechat/**", "/api/home/**", "/api/product/list", "/api/product/{id}", 
                     "/api/product/{productId}/comments", "/api/post/list", "/api/post/{id}").permitAll()
                 .anyRequest().authenticated()

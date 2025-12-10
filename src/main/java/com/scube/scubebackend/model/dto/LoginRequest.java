@@ -10,5 +10,15 @@ public class LoginRequest {
     
     @NotBlank(message = "openId不能为空")
     private String openId;
+    
+    /**
+     * 用户昵称（可选，如果提供则更新到数据库）
+     */
+    private String nickname;
+    
+    /**
+     * 用户头像URL（可选，如果提供则更新到数据库）
+     */
+    private String avatar;
 }
 
