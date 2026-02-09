@@ -11,13 +11,13 @@ import com.scube.scubebackend.model.entity.User;
 import com.scube.scubebackend.service.UserService;
 import com.scube.scubebackend.util.JwtUtil;
 import com.scube.scubebackend.util.UserContext;
+import com.scube.scubebackend.util.DisplayIDGenerator;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -30,6 +30,9 @@ public class UserServiceImpl implements UserService {
     
     @Autowired
     private JwtUtil jwtUtil;
+    
+    @Autowired
+    private DisplayIDGenerator displayIDGenerator;
     
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -77,6 +80,14 @@ public class UserServiceImpl implements UserService {
                 if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
                     user.setAvatar(request.getAvatar());
                 }
+                // displayId
+                String displayId;
+                boolean isUnique;
+                do {
+                    displayId = displayIDGenerator.generateDisplayID();
+                    isUnique = !userMapper.existsByDisplayId(displayId);
+                } while (!isUnique);
+                user.setDisplayId(displayId);
                 userMapper.insert(user);
             } else {
                 // 更新现有用户的昵称和头像（如果提供且与现有不同）

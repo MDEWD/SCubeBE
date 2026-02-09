@@ -40,6 +40,8 @@ public class Product {
     
     private BigDecimal price;
     
+    private String payMode;
+    
     private String region;
     
     private String location;

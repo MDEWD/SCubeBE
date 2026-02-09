@@ -20,6 +20,7 @@ public class ProductVO {
     private String bandwidth;
     private String maxCudaVersion;
     private String driverVersion;
+    private String payMode;
     private BigDecimal price;
     private BigDecimal rating;
     private Integer gpuAvailable;

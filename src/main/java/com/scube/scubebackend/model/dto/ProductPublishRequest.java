@@ -29,6 +29,9 @@ public class ProductPublishRequest {
     private String bandwidth;
     private String maxCudaVersion;
     private String driverVersion;
+
+    @NotBlank(message = "付费类型不能为空")
+    private String payMode;
     
     @NotNull(message = "价格不能为空")
     @DecimalMin(value = "0.01", message = "价格必须大于0.01")
@@ -43,8 +46,7 @@ public class ProductPublishRequest {
     private List<String> applicationScenes;
     
     private List<String> tags;
-    
-    @NotEmpty(message = "商品图片不能为空")
+
     private List<String> images;
     
     private Boolean isNewDataCenter;

@@ -1,6 +1,7 @@
 package com.scube.scubebackend.model.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -14,6 +15,9 @@ public class User {
     private Long id;
     
     private String openId;
+    
+    @TableField("display_id")
+    private String displayId;
     
     private String nickname;
     

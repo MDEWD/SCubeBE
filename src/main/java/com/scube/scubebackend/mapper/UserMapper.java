@@ -13,5 +13,11 @@ public interface UserMapper extends BaseMapper<User> {
      * @return 用户信息
      */
     User selectByOpenId(@Param("openId") String openId);
+    
+    /**
+     * 检查DisplayId是否已存在
+     * @param displayId 显示ID
+     * @return 是否存在
+     */
+    boolean existsByDisplayId(@Param("displayId") String displayId);
 }
-

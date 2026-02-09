@@ -6,6 +6,7 @@
     <resultMap id="BaseResultMap" type="com.scube.scubebackend.model.entity.User">
         <id column="id" property="id" />
         <result column="open_id" property="openId" />
+        <result column="display_id" property="displayId" />
         <result column="nickname" property="nickname" />
         <result column="avatar" property="avatar" />
         <result column="user_role" property="userRole" />
@@ -16,7 +17,7 @@
     
     <!-- 基础列 -->
     <sql id="Base_Column_List">
-        id, open_id, nickname, avatar, user_role, create_time, update_time, is_delete
+        id, open_id, display_id, nickname, avatar, user_role, create_time, update_time, is_delete
     </sql>
     
     <!-- 根据openId查询用户 -->
@@ -24,6 +25,13 @@
         SELECT <include refid="Base_Column_List" />
         FROM user
         WHERE open_id = #{openId} AND is_delete = 0
+    </select>
+    
+    <!-- 检查DisplayId是否已存在 -->
+    <select id="existsByDisplayId" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM user
+        WHERE display_id = #{displayId} AND is_delete = 0
     </select>
     
 </mapper>
