@@ -14,7 +14,6 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `open_id` VARCHAR(64) NOT NULL COMMENT '微信openId',
-    `display_id` VARCHAR(6) NOT NULL COMMENT '6位唯一用户标识符，展示id',
     `nickname` VARCHAR(50) DEFAULT NULL COMMENT '昵称',
     `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像URL',
     `user_role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '用户角色：ADMIN/USER/PARTNER',
@@ -23,7 +22,6 @@ CREATE TABLE `user` (
     `is_delete` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_open_id` (`open_id`),
-    UNIQUE KEY `uk_user_id` (`display_id`),
     KEY `idx_user_role` (`user_role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
@@ -45,7 +43,7 @@ CREATE TABLE `product` (
     `bandwidth` VARCHAR(50) DEFAULT NULL COMMENT '带宽',
     `max_cuda_version` VARCHAR(20) DEFAULT NULL COMMENT '最大CUDA版本',
     `driver_version` VARCHAR(50) DEFAULT NULL COMMENT '驱动版本',
-    `price` DECIMAL(10,2) NOT NULL COMMENT '价格（元）',
+    `price` DECIMAL(10,2) NOT NULL COMMENT '价格（万元）',
     `region` VARCHAR(50) DEFAULT NULL COMMENT '地区',
     `location` VARCHAR(100) DEFAULT NULL COMMENT '数据中心位置',
     `type` VARCHAR(20) NOT NULL DEFAULT 'lease' COMMENT '商品类型：official-recommend/lease',
@@ -54,7 +52,6 @@ CREATE TABLE `product` (
     `view_count` INT NOT NULL DEFAULT 0 COMMENT '浏览量',
     `is_hot` TINYINT NOT NULL DEFAULT 0 COMMENT '是否热门：0-否，1-是',
     `is_new` TINYINT NOT NULL DEFAULT 0 COMMENT '是否新品：0-否，1-是',
-    `pay_mode` VARCHAR(50) DEFAULT NULL COMMENT '付费模式/月/季/年',
     `create_time` DATETIME NOT NULL COMMENT '创建时间',
     `update_time` DATETIME NOT NULL COMMENT '更新时间',
     `is_delete` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
@@ -133,8 +130,7 @@ CREATE TABLE `comment` (
 DROP TABLE IF EXISTS `order`;
 CREATE TABLE `order` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `user_id` VARCHAR(10) NOT NULL COMMENT '用户ID',
-    `customer_id` VARCHAR(10) NOT NULL COMMENT '客户ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `product_id` BIGINT NOT NULL COMMENT '商品ID',
     `order_no` VARCHAR(32) NOT NULL COMMENT '订单号',
     `amount` DECIMAL(10,2) NOT NULL COMMENT '订单金额',
