@@ -1,6 +1,6 @@
 package com.scube.scubebackend.util;
 
-import com.scube.scubebackend.model.dto.LoginUser;
+import com.scube.scubebackend.modules.user.model.dto.LoginUser;
 
 public class UserContext {
     private static final ThreadLocal<LoginUser> userHolder = new ThreadLocal<>();

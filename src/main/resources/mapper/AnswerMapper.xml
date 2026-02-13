@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.scube.scubebackend.mapper.AnswerMapper">
+<mapper namespace="com.scube.scubebackend.modules.community.mapper.AnswerMapper">
     
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="com.scube.scubebackend.model.entity.Answer">
+    <resultMap id="BaseResultMap" type="com.scube.scubebackend.modules.community.model.entity.Answer">
         <id column="id" property="id" />
         <result column="post_id" property="postId" />
         <result column="user_id" property="userId" />

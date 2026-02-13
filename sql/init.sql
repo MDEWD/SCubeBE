@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `open_id` VARCHAR(64) NOT NULL COMMENT '微信openId',
+    `display_id` VARCHAR(64) NOT NULL COMMENT '显示ID',
     `nickname` VARCHAR(50) DEFAULT NULL COMMENT '昵称',
     `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像URL',
     `user_role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '用户角色：ADMIN/USER/PARTNER',
@@ -31,7 +32,7 @@ CREATE TABLE `user` (
 DROP TABLE IF EXISTS `product`;
 CREATE TABLE `product` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `user_id` BIGINT NOT NULL COMMENT '发布者ID',
+    `user_id` BIGINT NOT NULL COMMENT '发布者ID(关联用户表的id字段)',
     `name` VARCHAR(100) NOT NULL COMMENT '商品名称',
     `model` VARCHAR(50) DEFAULT NULL COMMENT '商品型号',
     `gpu_type` VARCHAR(50) DEFAULT NULL COMMENT 'GPU型号',

@@ -1,6 +1,6 @@
 package com.scube.scubebackend.filter;
 
-import com.scube.scubebackend.model.dto.LoginUser;
+import com.scube.scubebackend.modules.user.model.dto.LoginUser;
 import com.scube.scubebackend.util.JwtUtil;
 import com.scube.scubebackend.util.UserContext;
 import jakarta.servlet.FilterChain;

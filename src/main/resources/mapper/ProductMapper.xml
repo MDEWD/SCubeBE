@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.scube.scubebackend.mapper.ProductMapper">
+<mapper namespace="com.scube.scubebackend.modules.product.mapper.ProductMapper">
     
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="com.scube.scubebackend.model.entity.Product">
+    <resultMap id="BaseResultMap" type="com.scube.scubebackend.modules.product.model.entity.Product">
         <id column="id" property="id" />
         <result column="user_id" property="userId" />
         <result column="name" property="name" />
