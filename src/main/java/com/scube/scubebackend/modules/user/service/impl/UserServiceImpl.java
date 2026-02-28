@@ -1,12 +1,16 @@
 package com.scube.scubebackend.modules.user.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scube.scubebackend.common.ErrorCode;
 import com.scube.scubebackend.exception.BusinessException;
+import com.scube.scubebackend.modules.admin.model.dto.AdminUserVO;
 import com.scube.scubebackend.modules.user.mapper.UserMapper;
 import com.scube.scubebackend.modules.user.model.dto.LoginRequest;
 import com.scube.scubebackend.modules.user.model.dto.LoginResponse;
 import com.scube.scubebackend.modules.user.model.dto.LoginUser;
 import com.scube.scubebackend.modules.user.model.dto.UserVO;
+import com.scube.scubebackend.modules.user.model.dto.UserProfileVO;
 import com.scube.scubebackend.modules.user.model.entity.User;
 import com.scube.scubebackend.modules.user.service.UserService;
 import com.scube.scubebackend.util.JwtUtil;
@@ -18,6 +22,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -147,5 +153,55 @@ public class UserServiceImpl implements UserService {
         BeanUtils.copyProperties(user, userVO);
         return userVO;
     }
-}
 
+    @Override
+    public UserProfileVO getCurrentUserProfile() {
+        LoginUser loginUser = UserContext.getUser();
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+
+        User user = userMapper.selectById(loginUser.getId());
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+        }
+
+        UserProfileVO profile = new UserProfileVO();
+        profile.setId(user.getDisplayId() != null ? user.getDisplayId() : String.valueOf(user.getId()));
+        profile.setName(user.getNickname());
+        profile.setEmail(null); // 目前数据库没有邮箱字段
+        profile.setRole(user.getUserRole() != null ? user.getUserRole().toLowerCase() : "user");
+        profile.setAvatar(user.getAvatar());
+        profile.setJoinDate(user.getCreateTime() != null ? user.getCreateTime().toString() : null);
+
+        return profile;
+    }
+
+    @Override
+    public IPage<AdminUserVO> getAllUsers(int page, int pageSize) {
+        LoginUser loginUser = UserContext.getUser();
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        if (!"ADMIN".equals(loginUser.getUserRole()) && !"admin".equals(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权访问");
+        }
+
+        Page<User> userPage = new Page<>(page, pageSize);
+        IPage<User> resultPage = userMapper.selectPage(userPage, null);
+
+        List<AdminUserVO> voList = resultPage.getRecords().stream().map(user -> {
+            AdminUserVO vo = new AdminUserVO();
+            vo.setId(String.valueOf(user.getId()));
+            vo.setName(user.getNickname());
+            vo.setEmail(""); // Email not in DB
+            vo.setRole(user.getUserRole());
+            vo.setJoinDate(user.getCreateTime() != null ? user.getCreateTime().toString().split("T")[0] : "");
+            return vo;
+        }).collect(Collectors.toList());
+
+        Page<AdminUserVO> voPage = new Page<>(page, pageSize, resultPage.getTotal());
+        voPage.setRecords(voList);
+        return voPage;
+    }
+}

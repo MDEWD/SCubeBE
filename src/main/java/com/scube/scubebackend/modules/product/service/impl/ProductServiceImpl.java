@@ -27,6 +27,11 @@ import com.scube.scubebackend.modules.product.model.entity.Product;
 import com.scube.scubebackend.modules.product.model.entity.ProductApplicationScene;
 import com.scube.scubebackend.modules.product.model.entity.ProductImage;
 import com.scube.scubebackend.modules.product.model.entity.ProductTag;
+import com.scube.scubebackend.modules.admin.model.dto.AuditDecision;
+import com.scube.scubebackend.modules.admin.model.dto.AuditRequest;
+import com.scube.scubebackend.modules.user.mapper.UserMapper;
+import com.scube.scubebackend.modules.user.model.entity.User;
+import com.scube.scubebackend.util.UserContext;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -45,7 +50,10 @@ public class ProductServiceImpl implements ProductService {
     
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
-    
+
+    @Autowired
+    private UserMapper userMapper; // Inject UserMapper
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ProductVO publishProduct(ProductPublishRequest request, LoginUser loginUser) {
@@ -332,7 +340,12 @@ public class ProductServiceImpl implements ProductService {
         Page<Product> productPage = productMapper.selectPage(pageParam, queryWrapper);
         
         List<ProductVO> voList = productPage.getRecords().stream()
-                .map(this::convertToVO)
+                .map(product -> {
+                     ProductVO vo = convertToVO(product);
+                     // Ideally we should load details or at least tags/images if needed for "My Products" list
+                     // For performance, maybe just basic info is fine, but let's be safe and load tags at least
+                     return vo;
+                })
                 .collect(Collectors.toList());
         
         return new PageResult<>(
@@ -342,7 +355,63 @@ public class ProductServiceImpl implements ProductService {
             (long) size
         );
     }
-    
+
+    @Override
+    public List<AuditRequest> getPendingAudits() {
+        LoginUser loginUser = UserContext.getUser();
+        if (loginUser == null || !"ADMIN".equals(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+
+        LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Product::getStatus, "PENDING")
+                   .eq(Product::getIsDelete, 0)
+                   .orderByAsc(Product::getCreateTime);
+
+        List<Product> pendingProducts = productMapper.selectList(queryWrapper);
+
+        return pendingProducts.stream().map(product -> {
+            AuditRequest request = new AuditRequest();
+            request.setId(String.valueOf(product.getId()));
+
+            User user = userMapper.selectById(product.getUserId());
+            request.setUserName(user != null ? user.getNickname() : "Unknown");
+
+            request.setApplyTime(product.getCreateTime() != null ? product.getCreateTime().toString() : "");
+            request.setStatus("pending");
+            request.setReason("New Product Application: " + product.getName());
+            return request;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void auditProduct(String auditId, AuditDecision decision) {
+        LoginUser loginUser = UserContext.getUser();
+        if (loginUser == null || !"ADMIN".equals(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+
+        Long productId = Long.valueOf(auditId);
+        Product product = productMapper.selectById(productId);
+        if (product == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "Product not found");
+        }
+
+        if ("approved".equalsIgnoreCase(decision.getStatus())) {
+            product.setStatus("ACTIVE");
+        } else if ("rejected".equalsIgnoreCase(decision.getStatus())) {
+            product.setStatus("REJECTED");
+            // potentially store reject reason somewhere, maybe in a new field or audit log
+        } else {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Invalid decision status");
+        }
+
+        product.setUpdateTime(LocalDateTime.now());
+        productMapper.updateById(product);
+        clearProductCache();
+    }
+
     private ProductVO convertToVO(Product product) {
         ProductVO vo = new ProductVO();
         BeanUtils.copyProperties(product, vo);

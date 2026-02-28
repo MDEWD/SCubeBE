@@ -1,21 +1,25 @@
 package com.scube.scubebackend.modules.user.controller;
 
 import com.scube.scubebackend.common.controller.BaseController;
-import com.scube.scubebackend.common.ErrorCode;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.scube.scubebackend.common.model.dto.BaseResponse;
 import com.scube.scubebackend.modules.order.model.dto.CheckTicketResponse;
 import com.scube.scubebackend.modules.user.model.dto.LoginRequest;
 import com.scube.scubebackend.modules.user.model.dto.LoginResponse;
 import com.scube.scubebackend.modules.user.model.dto.UserVO;
+import com.scube.scubebackend.modules.user.model.dto.UserProfileVO;
 import com.scube.scubebackend.modules.user.model.dto.WeChatUserInfo;
 import com.scube.scubebackend.modules.user.service.UserService;
 import com.scube.scubebackend.modules.user.service.WeChatService;
+import com.scube.scubebackend.modules.order.service.OrderService;
+import com.scube.scubebackend.modules.order.model.dto.CustomerOrderVO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/user")
@@ -26,7 +30,10 @@ public class UserController extends BaseController {
     
     @Autowired
     private WeChatService weChatService;
-    
+
+    @Autowired
+    private OrderService orderService;
+
     /**
      * 生成登录二维码
      */
@@ -85,6 +92,24 @@ public class UserController extends BaseController {
         return BaseResponse.success(user);
     }
     
+    @GetMapping("/me")
+    public BaseResponse<UserProfileVO> getCurrentUserProfile() {
+        UserProfileVO userProfile = userService.getCurrentUserProfile();
+        return BaseResponse.success(userProfile);
+    }
+
+    /**
+     * 获取客户订单列表
+     */
+    @GetMapping("/orders")
+    public BaseResponse<List<CustomerOrderVO>> getUserOrders(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) String status) {
+        IPage<CustomerOrderVO> orderPage = orderService.getCustomerOrders(page, pageSize, status);
+        return BaseResponse.success(orderPage.getRecords());
+    }
+
     /**
      * 退出登录
      * 注意：由于使用JWT，服务端是无状态的，退出登录主要是清除前端的token
@@ -98,4 +123,3 @@ public class UserController extends BaseController {
         return BaseResponse.success("退出登录成功");
     }
 }
-

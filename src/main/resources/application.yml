@@ -26,7 +26,7 @@ wechat:
     secret: ${WECHAT_MP_SECRET:832b070364fdd4a6c83da1fbd8a0299f}      # 测试号AppSecret
     token: ${WECHAT_MP_TOKEN:123456}                                  # 自定义Token（用于验证签名，需与测试号后台配置一致）
     aes-key:                                       # 消息加解密密钥（可选，测试环境可以不填）
-    oauth-domain: http://d26759ff.natappfree.cc            # OAuth回调域名（本地开发使用localhost，生产环境需要公网域名）
+    oauth-domain: http://y9ade5da.natappfree.cc           # OAuth回调域名（本地开发使用localhost，生产环境需要公网域名）
 
 jwt:
   secret: scube-secret-key-for-jwt-token-generation-minimum-256-bits

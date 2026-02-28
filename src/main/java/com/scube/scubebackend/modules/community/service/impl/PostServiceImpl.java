@@ -22,12 +22,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.scube.scubebackend.modules.community.model.dto.AnswerVO;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-import com.scube.scubebackend.modules.community.model.dto.AnswerVO;
-
 @Service
 public class PostServiceImpl implements PostService {
     
@@ -152,7 +151,7 @@ public class PostServiceImpl implements PostService {
         List<Answer> answers = answerMapper.selectList(answerWrapper);
         
         vo.setAnswers(answers.stream().map(answer -> {
-            com.scube.scubebackend.model.dto.AnswerVO answerVO = new com.scube.scubebackend.model.dto.AnswerVO();
+            AnswerVO answerVO = new AnswerVO();
             BeanUtils.copyProperties(answer, answerVO);
             answerVO.setIsAccepted(answer.getIsAccepted() == 1);
             
