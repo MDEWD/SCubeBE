@@ -1,7 +1,10 @@
 package com.scube.scubebackend.modules.user.service.impl;
 
+import com.scube.scubebackend.modules.user.mapper.UserMapper;
+import com.scube.scubebackend.modules.user.model.entity.User;
 import com.scube.scubebackend.modules.user.model.dto.WeChatUserInfo;
 import com.scube.scubebackend.modules.user.service.WeChatService;
+import com.scube.scubebackend.util.DisplayIDGenerator;
 import me.chanjar.weixin.common.error.WxErrorException;
 import me.chanjar.weixin.mp.api.WxMpService;
 import me.chanjar.weixin.mp.bean.kefu.WxMpKefuMessage;
@@ -38,8 +41,20 @@ public class WeChatServiceImpl implements WeChatService {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
+    @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
+    private DisplayIDGenerator displayIDGenerator;
+
     @Value("${wechat.mp.oauth-domain:http://localhost:8077}")
     private String oauthDomain;
+
+    @Value("${frontend.oauth-callback-url:http://localhost:3000/auth/callback}")
+    private String frontendOauthCallbackUrl;
+
+    @Value("${frontend.oauth-error-url:http://localhost:3000/auth/error}")
+    private String frontendOauthErrorUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -233,53 +248,65 @@ public class WeChatServiceImpl implements WeChatService {
 
     @Override
     public WeChatUserInfo checkTicketScannedWithUserInfo(String ticket) {
-        String openId = checkTicketScanned(ticket);
-        if (openId == null) {
-            return null;
-        }
-
-        // 先尝试从Redis获取已授权的用户信息
-        String userInfoKey = "wechat:userinfo:" + openId;
-        WeChatUserInfo cachedUserInfo = (WeChatUserInfo) redisTemplate.opsForValue().get(userInfoKey);
-        if (cachedUserInfo != null && (cachedUserInfo.getNickname() != null || cachedUserInfo.getAvatar() != null)) {
-            cachedUserInfo.setNeedAuthorize(false);
-            cachedUserInfo.setAuthorizationUrl(null);
-            log.debug("从缓存获取用户信息: {}", cachedUserInfo);
-            return cachedUserInfo;
-        }
-
-        // 缓存没有的话，尝试通过 openId 获取（可能拿不到昵称/头像）
-        WeChatUserInfo userInfo = getUserInfo(openId);
-
-        boolean missingProfile = (userInfo == null)
-                || (userInfo.getNickname() == null && userInfo.getAvatar() == null);
-
-        if (missingProfile) {
-            WeChatUserInfo minimal = userInfo != null ? userInfo : new WeChatUserInfo();
-            minimal.setOpenId(openId);
-            minimal.setNickname(null);
-            minimal.setAvatar(null);
-
-            try {
-                String redirectUri = getOAuthRedirectUri();
-                String authorizationUrl = buildAuthorizationUrl(redirectUri, ticket);
-                minimal.setNeedAuthorize(true);
-                minimal.setAuthorizationUrl(authorizationUrl);
-            } catch (Exception e) {
-                minimal.setNeedAuthorize(false);
-                minimal.setAuthorizationUrl(null);
+        try {
+            String openId = checkTicketScanned(ticket);
+            if (openId == null) {
+                return null;
             }
-            return minimal;
-        }
 
-        // 拿到了资料则缓存
-        if (userInfo.getNickname() != null || userInfo.getAvatar() != null) {
-            redisTemplate.opsForValue().set(userInfoKey, userInfo, 300, TimeUnit.SECONDS);
-        }
+            // 标记授权状态（oauth 回调会写入 authed）
+            String statusKey = "wechat:qr:ticket:" + ticket + ":status";
+            Object status = redisTemplate.opsForValue().get(statusKey);
+            boolean authorized = status != null && "authed".equalsIgnoreCase(status.toString());
 
-        userInfo.setNeedAuthorize(false);
-        userInfo.setAuthorizationUrl(null);
-        return userInfo;
+            // 先尝试从Redis获取已授权的用户信息
+            String userInfoKey = "wechat:userinfo:" + openId;
+            WeChatUserInfo cachedUserInfo = (WeChatUserInfo) redisTemplate.opsForValue().get(userInfoKey);
+            if (cachedUserInfo != null && (cachedUserInfo.getNickname() != null || cachedUserInfo.getAvatar() != null)) {
+                cachedUserInfo.setNeedAuthorize(false);
+                cachedUserInfo.setAuthorizationUrl(null);
+                // 只有当 oauth 回调真正完成时才算 authorized
+                cachedUserInfo.setNeedAuthorize(!authorized);
+                log.info("从缓存获取用户信息: {}", cachedUserInfo);
+                return cachedUserInfo;
+            }
+
+            // 缓存没有的话，尝试通过 openId 获取（可能拿不到昵称/头像）
+            WeChatUserInfo userInfo = getUserInfo(openId);
+
+            boolean missingProfile = (userInfo == null)
+                    || (userInfo.getNickname() == null && userInfo.getAvatar() == null);
+
+            if (missingProfile) {
+                WeChatUserInfo minimal = userInfo != null ? userInfo : new WeChatUserInfo();
+                minimal.setOpenId(openId);
+                minimal.setNickname(null);
+                minimal.setAvatar(null);
+
+                try {
+                    String redirectUri = getOAuthRedirectUri();
+                    String authorizationUrl = buildAuthorizationUrl(redirectUri, ticket);
+                    minimal.setNeedAuthorize(!authorized);
+                    minimal.setAuthorizationUrl(authorizationUrl);
+                } catch (Exception e) {
+                    minimal.setNeedAuthorize(!authorized);
+                    minimal.setAuthorizationUrl(null);
+                }
+                return minimal;
+            }
+
+            // 拿到了资料则缓存
+            if (userInfo.getNickname() != null || userInfo.getAvatar() != null) {
+                redisTemplate.opsForValue().set(userInfoKey, userInfo, 300, TimeUnit.SECONDS);
+            }
+
+            userInfo.setNeedAuthorize(!authorized);
+            userInfo.setAuthorizationUrl(null);
+            return userInfo;
+        } catch (Exception e) {
+            log.error("checkTicketScannedWithUserInfo失败(ticket={})", ticket, e);
+            throw new RuntimeException("checkTicketScannedWithUserInfo失败: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -375,8 +402,7 @@ public class WeChatServiceImpl implements WeChatService {
             }
 
             log.info("通过API获取用户信息成功 - openId: {}, nicknamePresent={}, avatarPresent={}", openId,
-                    userInfo, userInfo.getAvatar());
-            System.out.println("用户信息: " + userInfo);
+                    userInfo.getNickname() != null, userInfo.getAvatar() != null);
 
             return userInfo;
 
@@ -521,5 +547,88 @@ public class WeChatServiceImpl implements WeChatService {
                 fromUserName, toUserName, System.currentTimeMillis() / 1000, content
         );
     }
-}
 
+    @Override
+    public String handleOAuthCallback(String code, String state) {
+        try {
+            WeChatUserInfo userInfo = getUserInfoByCode(code);
+
+            if (userInfo == null || userInfo.getOpenId() == null || userInfo.getOpenId().isEmpty()) {
+                throw new RuntimeException("未获取到openId");
+            }
+
+            // 将用户信息存储到Redis，key为state（通常是ticket）
+            if (state != null && !state.isEmpty()) {
+                String ticketKey = "wechat:qr:ticket:" + state;
+                redisTemplate.opsForValue().set(ticketKey, userInfo.getOpenId(), 300, TimeUnit.SECONDS);
+
+                // 存储用户信息（包含昵称和头像）
+                String userInfoKey = "wechat:userinfo:" + userInfo.getOpenId();
+                redisTemplate.opsForValue().set(userInfoKey, userInfo, 300, TimeUnit.SECONDS);
+
+                // 同时写入新结构（便于轮询端读取）
+                redisTemplate.opsForValue().set(ticketKey + ":openid", userInfo.getOpenId(), 300, TimeUnit.SECONDS);
+                redisTemplate.opsForValue().set(ticketKey + ":status", "authed", 300, TimeUnit.SECONDS);
+            }
+
+            // 落库：openId 唯一，存在则更新 nickname/avatar，不存在则创建
+            User dbUser = userMapper.selectByOpenId(userInfo.getOpenId());
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            if (dbUser == null) {
+                dbUser = new User();
+                dbUser.setOpenId(userInfo.getOpenId());
+                dbUser.setNickname(userInfo.getNickname());
+                dbUser.setAvatar(userInfo.getAvatar());
+                dbUser.setUserRole("USER");
+                dbUser.setCreateTime(now);
+                dbUser.setUpdateTime(now);
+                dbUser.setIsDelete(0);
+
+                dbUser.setDisplayId(generateUniqueDisplayId());
+
+                userMapper.insert(dbUser);
+            } else {
+                boolean needUpdate = false;
+                if (userInfo.getNickname() != null && !userInfo.getNickname().isEmpty() && !userInfo.getNickname().equals(dbUser.getNickname())) {
+                    dbUser.setNickname(userInfo.getNickname());
+                    needUpdate = true;
+                }
+                if (userInfo.getAvatar() != null && !userInfo.getAvatar().isEmpty() && !userInfo.getAvatar().equals(dbUser.getAvatar())) {
+                    dbUser.setAvatar(userInfo.getAvatar());
+                    needUpdate = true;
+                }
+                if (needUpdate) {
+                    dbUser.setUpdateTime(now);
+                    userMapper.updateById(dbUser);
+                }
+            }
+
+            String redirectUrl = frontendOauthCallbackUrl + "?openId=" + userInfo.getOpenId();
+            if (userInfo.getNickname() != null) {
+                redirectUrl += "&nickname=" + java.net.URLEncoder.encode(userInfo.getNickname(), java.nio.charset.StandardCharsets.UTF_8);
+            }
+            if (userInfo.getAvatar() != null) {
+                redirectUrl += "&avatar=" + java.net.URLEncoder.encode(userInfo.getAvatar(), java.nio.charset.StandardCharsets.UTF_8);
+            }
+
+            return "redirect:" + redirectUrl;
+        } catch (Exception e) {
+            log.error("处理OAuth回调失败", e);
+            try {
+                return "redirect:" + frontendOauthErrorUrl + "?message=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+            } catch (Exception ex) {
+                return "redirect:" + frontendOauthErrorUrl + "?message=oauth_failed";
+            }
+        }
+    }
+
+    private String generateUniqueDisplayId() {
+        String displayId;
+        boolean isUnique;
+        do {
+            displayId = displayIDGenerator.generateDisplayID();
+            isUnique = !userMapper.existsByDisplayId(displayId);
+        } while (!isUnique);
+        return displayId;
+    }
+}

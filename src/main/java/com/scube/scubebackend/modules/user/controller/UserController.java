@@ -17,12 +17,14 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 
 @RestController
 @RequestMapping("/api/user")
+@Slf4j
 public class UserController extends BaseController {
     
     @Autowired
@@ -33,6 +35,9 @@ public class UserController extends BaseController {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 生成登录二维码
@@ -48,15 +53,22 @@ public class UserController extends BaseController {
      */
     @GetMapping("/check-ticket")
     public BaseResponse<CheckTicketResponse> checkTicket(@RequestParam String ticket) {
+        log.info("/check-ticket hit: ticket={}", ticket);
         WeChatUserInfo userInfo = weChatService.checkTicketScannedWithUserInfo(ticket);
         CheckTicketResponse response = new CheckTicketResponse();
         if (userInfo != null) {
             response.setScanned(true);
             response.setUserInfo(userInfo);
+            // 授权完成标记：oauth 回调会写入 authed
+            String statusKey = "wechat:qr:ticket:" + ticket + ":status";
+            Object status = redisTemplate.opsForValue().get(statusKey);
+            response.setAuthorized(status != null && "authed".equalsIgnoreCase(status.toString()));
         } else {
             response.setScanned(false);
             response.setUserInfo(null);
+            response.setAuthorized(false);
         }
+        log.info("/check-ticket done: ticket={}, scanned={}, authorized={}", ticket, response.getScanned(), response.getAuthorized());
         return BaseResponse.success(response);
     }
     
@@ -80,19 +92,28 @@ public class UserController extends BaseController {
         }
     }
 
+    /**
+     * 登录（需要验证码 + openId）。
+     */
     @PostMapping("/login")
     public BaseResponse<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
         LoginResponse response = userService.login(request);
         return BaseResponse.success("登录成功", response);
     }
-    
-    @GetMapping("/get/login")
+
+    /**
+     * 获取当前登录用户基础信息（需要携带JWT）。
+     */
+    @GetMapping("/me")
     public BaseResponse<UserVO> getCurrentUser() {
         UserVO user = userService.getCurrentUser();
         return BaseResponse.success(user);
     }
-    
-    @GetMapping("/me")
+
+    /**
+     * 获取当前登录用户详细资料（需要携带JWT）。
+     */
+    @GetMapping("/profile")
     public BaseResponse<UserProfileVO> getCurrentUserProfile() {
         UserProfileVO userProfile = userService.getCurrentUserProfile();
         return BaseResponse.success(userProfile);

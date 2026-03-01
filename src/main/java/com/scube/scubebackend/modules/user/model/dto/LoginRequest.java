@@ -5,9 +5,6 @@ import lombok.Data;
 
 @Data
 public class LoginRequest {
-    @NotBlank(message = "验证码不能为空")
-    private String code;
-    
     @NotBlank(message = "openId不能为空")
     private String openId;
     
@@ -21,8 +18,6 @@ public class LoginRequest {
      */
     private String avatar;
 
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
     public String getOpenId() { return openId; }
     public void setOpenId(String openId) { this.openId = openId; }
     public String getNickname() { return nickname; }

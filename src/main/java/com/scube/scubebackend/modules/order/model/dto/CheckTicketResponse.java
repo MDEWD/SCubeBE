@@ -12,10 +12,14 @@ public class CheckTicketResponse {
      * 是否已扫描
      */
     private Boolean scanned;
-    
+
+    /**
+     * 是否已完成授权（点击授权链接）
+     */
+    private Boolean authorized;
+
     /**
      * 微信用户信息（扫描后才有值）
      */
     private WeChatUserInfo userInfo;
 }
-

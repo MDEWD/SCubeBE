@@ -43,31 +43,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public LoginResponse login(LoginRequest request) {
         try {
-            String code = request.getCode();
             String openId = request.getOpenId();
-            
-            if (code == null || code.isEmpty()) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码不能为空");
-            }
             if (openId == null || openId.isEmpty()) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "openId不能为空");
             }
-            
-            // 从Redis获取验证码
-            String key = "login:code:" + openId;
-            String storedCode = (String) redisTemplate.opsForValue().get(key);
-            
-            if (storedCode == null) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码已过期，请重新获取");
-            }
-            
-            if (!storedCode.equals(code)) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误");
-            }
-            
-            // 验证成功后删除验证码（一次性使用）
-            redisTemplate.delete(key);
-            
+
             // 查询或创建用户
             User user = userMapper.selectByOpenId(openId);
             

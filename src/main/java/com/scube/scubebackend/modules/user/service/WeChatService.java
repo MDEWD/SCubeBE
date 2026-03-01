@@ -52,5 +52,12 @@ public interface WeChatService {
      * @return 微信用户信息，包含openId、nickname、avatar
      */
     WeChatUserInfo getUserInfoByCode(String code);
-}
 
+    /**
+     * 处理微信网页授权回调，完成用户信息获取、缓存、落库，并返回重定向地址字符串。
+     * @param code 授权code
+     * @param state 状态参数（ticket）
+     * @return redirect: 开头的重定向字符串
+     */
+    String handleOAuthCallback(String code, String state);
+}
