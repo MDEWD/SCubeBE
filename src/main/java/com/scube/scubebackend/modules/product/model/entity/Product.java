@@ -21,6 +21,8 @@ public class Product {
     private String model;
     
     private String gpuType;
+
+    private Integer stock;
     
     private Integer gpuCount;
     
@@ -30,7 +32,7 @@ public class Product {
     
     private String systemDisk;
     
-    private String dataDisk;
+    private String storage;
     
     private String bandwidth;
     
@@ -38,15 +40,19 @@ public class Product {
     
     private String driverVersion;
     
-    private BigDecimal price;
+    private BigDecimal monthlyPrice;
+
+    private String tag;
     
     private String payMode;
     
     private String region;
     
-    private String location;
+    private String position;
     
     private String type;
+
+    private Integer highSpeedNetCard;
     
     private String status;
     
