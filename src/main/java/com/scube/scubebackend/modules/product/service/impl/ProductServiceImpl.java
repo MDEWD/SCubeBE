@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scube.scubebackend.common.ErrorCode;
 import com.scube.scubebackend.exception.BusinessException;
+import com.scube.scubebackend.modules.product.model.dto.MyProductQueryRequest;
 import com.scube.scubebackend.modules.user.model.dto.LoginUser;
 import com.scube.scubebackend.common.model.dto.PageResult;
 import com.scube.scubebackend.modules.product.model.dto.ProductPublishRequest;
@@ -16,7 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.scube.scubebackend.modules.product.mapper.ProductApplicationSceneMapper;
@@ -171,7 +175,7 @@ public class ProductServiceImpl implements ProductService {
                     tagWrapper.eq(ProductTag::getProductId, product.getId());
                     List<ProductTag> tags = productTagMapper.selectList(tagWrapper);
                     if (tags != null && !tags.isEmpty()) {
-                        vo.setTags(tags.stream().map(ProductTag::getTagName).collect(Collectors.toList()));
+                        vo.setTag(tags.stream().map(ProductTag::getTagName).collect(Collectors.toList()));
                     }
                     return vo;
                 })
@@ -312,37 +316,73 @@ public class ProductServiceImpl implements ProductService {
     }
     
     @Override
-    public PageResult<ProductVO> getMyProducts(LoginUser loginUser, Integer page, Integer size) {
+    public PageResult<ProductVO> getMyProducts(LoginUser loginUser, MyProductQueryRequest request) {
+        Integer page = request != null ? request.getPage() : null;
+        Integer size = request != null ? request.getPageSize() : null;
         if (page == null || page < 1) {
             page = 1;
         }
         if (size == null || size < 1) {
             size = 20;
         }
-        
+
         Page<Product> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Product::getUserId, loginUser.getId())
-                .eq(Product::getIsDelete, 0)
-                .orderByDesc(Product::getCreateTime);
-        
+                .eq(Product::getIsDelete, 0);
+
+        if (request != null && request.getGpuTypes() != null && !request.getGpuTypes().isEmpty()) {
+            queryWrapper.in(Product::getGpuType, request.getGpuTypes());
+        }
+
+        LocalDateTime startTime = parseStartTime(request != null ? request.getPublishTimeStart() : null);
+        LocalDateTime endTime = parseEndTime(request != null ? request.getPublishTimeEnd() : null);
+        if (startTime != null && endTime != null && endTime.isBefore(startTime)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "publishTimeEnd不能早于publishTimeStart");
+        }
+        if (startTime != null) {
+            queryWrapper.ge(Product::getCreateTime, startTime);
+        }
+        if (endTime != null) {
+            queryWrapper.le(Product::getCreateTime, endTime);
+        }
+
+        queryWrapper.orderByDesc(Product::getCreateTime);
+
         Page<Product> productPage = productMapper.selectPage(pageParam, queryWrapper);
-        
+
         List<ProductVO> voList = productPage.getRecords().stream()
-                .map(product -> {
-                     ProductVO vo = convertToVO(product);
-                     // Ideally we should load details or at least tags/images if needed for "My Products" list
-                     // For performance, maybe just basic info is fine, but let's be safe and load tags at least
-                     return vo;
-                })
+                .map(this::convertToVO)
                 .collect(Collectors.toList());
-        
+
         return new PageResult<>(
             voList,
             productPage.getTotal(),
             (long) page,
             (long) size
         );
+    }
+
+    private LocalDateTime parseStartTime(String dateText) {
+        if (dateText == null || dateText.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(dateText).atStartOfDay();
+        } catch (DateTimeParseException ex) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "publishTimeStart格式错误，期望yyyy-MM-dd");
+        }
+    }
+
+    private LocalDateTime parseEndTime(String dateText) {
+        if (dateText == null || dateText.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(dateText).atTime(LocalTime.MAX);
+        } catch (DateTimeParseException ex) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "publishTimeEnd格式错误，期望yyyy-MM-dd");
+        }
     }
 
     @Override
@@ -415,7 +455,7 @@ public class ProductServiceImpl implements ProductService {
         tagWrapper.eq(ProductTag::getProductId, productId);
         List<ProductTag> tags = productTagMapper.selectList(tagWrapper);
         if (tags != null && !tags.isEmpty()) {
-            vo.setTags(tags.stream().map(ProductTag::getTagName).collect(Collectors.toList()));
+            vo.setTag(tags.stream().map(ProductTag::getTagName).collect(Collectors.toList()));
         }
         
         // 加载图片

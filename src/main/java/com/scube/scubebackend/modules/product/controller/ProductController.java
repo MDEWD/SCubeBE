@@ -7,6 +7,7 @@ import com.scube.scubebackend.common.model.dto.PageResult;
 import com.scube.scubebackend.modules.product.model.dto.ProductPublishRequest;
 import com.scube.scubebackend.modules.product.model.dto.ProductVO;
 import com.scube.scubebackend.modules.product.service.ProductService;
+import com.scube.scubebackend.modules.product.model.dto.MyProductQueryRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -63,13 +64,10 @@ public class ProductController extends BaseController {
         return BaseResponse.success("删除成功", null);
     }
     
-    @GetMapping("/my")
-    public BaseResponse<PageResult<ProductVO>> getMyProducts(
-            @RequestParam(required = false, defaultValue = "1") Integer page,
-            @RequestParam(required = false, defaultValue = "20") Integer size) {
+    @PostMapping("/my")
+    public BaseResponse<PageResult<ProductVO>> getMyProducts(@RequestBody MyProductQueryRequest request) {
         LoginUser loginUser = getLoginUser();
-        PageResult<ProductVO> result = productService.getMyProducts(loginUser, page, size);
+        PageResult<ProductVO> result = productService.getMyProducts(loginUser, request);
         return BaseResponse.success(result);
     }
 }
-
