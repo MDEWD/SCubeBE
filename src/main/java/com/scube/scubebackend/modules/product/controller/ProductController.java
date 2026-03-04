@@ -50,7 +50,8 @@ public class ProductController extends BaseController {
     }
     
     @PutMapping("/{id}")
-    public BaseResponse<ProductVO> updateProduct(@PathVariable Long id, 
+    @PreAuthorize("hasAnyRole('ADMIN', 'PARTNER')")
+    public BaseResponse<ProductVO> updateProduct(@PathVariable Long id,
                                                  @RequestBody @Valid ProductPublishRequest request) {
         LoginUser loginUser = getLoginUser();
         ProductVO product = productService.updateProduct(id, request, loginUser);
@@ -58,6 +59,7 @@ public class ProductController extends BaseController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PARTNER')")
     public BaseResponse<Void> deleteProduct(@PathVariable Long id) {
         LoginUser loginUser = getLoginUser();
         productService.deleteProduct(id, loginUser);

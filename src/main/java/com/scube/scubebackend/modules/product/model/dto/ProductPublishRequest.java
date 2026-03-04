@@ -27,6 +27,7 @@ public class ProductPublishRequest {
     private String cpu;
     private String memory;
     private String systemDisk;
+    private String storage;
     private String bandwidth;
     private String maxCudaVersion;
     private String driverVersion;
@@ -47,7 +48,7 @@ public class ProductPublishRequest {
 
     private List<String> applicationScenes;
     
-    private List<String> tags;
+    private List<String> tag;
 
     private List<String> images;
     
@@ -55,4 +56,3 @@ public class ProductPublishRequest {
     private String dataCenterDescription;
     private List<String> dataCenterImages;
 }
-

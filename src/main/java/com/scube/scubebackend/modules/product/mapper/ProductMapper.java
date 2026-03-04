@@ -21,5 +21,11 @@ public interface ProductMapper extends BaseMapper<Product> {
      * @return 商品列表
      */
     List<Product> selectByUserId(@Param("userId") Long userId);
-}
 
+    /**
+     * 检查ProductId是否已存在
+     * @param productId 显示用ProductId
+     * @return 是否存在
+     */
+    boolean existsByProductId(@Param("productId") String productId);
+}

@@ -1,6 +1,7 @@
 package com.scube.scubebackend.modules.product.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scube.scubebackend.common.ErrorCode;
 import com.scube.scubebackend.exception.BusinessException;
@@ -10,6 +11,7 @@ import com.scube.scubebackend.common.model.dto.PageResult;
 import com.scube.scubebackend.modules.product.model.dto.ProductPublishRequest;
 import com.scube.scubebackend.modules.product.model.dto.ProductVO;
 import com.scube.scubebackend.modules.product.service.ProductService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -21,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.scube.scubebackend.modules.product.mapper.ProductApplicationSceneMapper;
@@ -36,7 +39,9 @@ import com.scube.scubebackend.modules.admin.model.dto.AuditRequest;
 import com.scube.scubebackend.modules.user.mapper.UserMapper;
 import com.scube.scubebackend.modules.user.model.entity.User;
 import com.scube.scubebackend.util.UserContext;
+import com.scube.scubebackend.util.DisplayIDGenerator;
 
+@Log4j2
 @Service
 public class ProductServiceImpl implements ProductService {
     
@@ -58,13 +63,18 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private UserMapper userMapper; // Inject UserMapper
 
+    @Autowired
+    private DisplayIDGenerator displayIDGenerator;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ProductVO publishProduct(ProductPublishRequest request, LoginUser loginUser) {
         // 创建商品主表
         Product product = new Product();
         BeanUtils.copyProperties(request, product);
+        product.setTag(joinTags(request.getTag()));
         product.setUserId(loginUser.getId());
+        product.setProductId(generateUniqueProductId());
         product.setCreateTime(LocalDateTime.now());
         product.setUpdateTime(LocalDateTime.now());
         product.setIsDelete(0);
@@ -170,13 +180,6 @@ public class ProductServiceImpl implements ProductService {
         List<ProductVO> voList = productPage.getRecords().stream()
                 .map(product -> {
                     ProductVO vo = convertToVO(product);
-                    // 加载标签（列表页只加载标签）
-                    LambdaQueryWrapper<ProductTag> tagWrapper = new LambdaQueryWrapper<>();
-                    tagWrapper.eq(ProductTag::getProductId, product.getId());
-                    List<ProductTag> tags = productTagMapper.selectList(tagWrapper);
-                    if (tags != null && !tags.isEmpty()) {
-                        vo.setTag(tags.stream().map(ProductTag::getTagName).collect(Collectors.toList()));
-                    }
                     return vo;
                 })
                 .collect(Collectors.toList());
@@ -234,60 +237,64 @@ public class ProductServiceImpl implements ProductService {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "商品不存在");
         }
         
-        // 权限检查：只有管理员或发布者可以修改
-        if (!"ADMIN".equals(loginUser.getUserRole()) && !product.getUserId().equals(loginUser.getId())) {
+        String role = loginUser.getUserRole();
+        if (!"ADMIN".equals(role) && !"PARTNER".equals(role)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限修改此商品");
+        }
+        if ("PARTNER".equals(role) && !product.getUserId().equals(loginUser.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限修改此商品");
         }
         
         // 更新商品主表
         BeanUtils.copyProperties(request, product);
+        product.setTag(joinTags(request.getTag()));
         product.setUpdateTime(LocalDateTime.now());
         productMapper.updateById(product);
         
         // 删除旧的关联数据
-        LambdaQueryWrapper<ProductTag> tagWrapper = new LambdaQueryWrapper<>();
-        tagWrapper.eq(ProductTag::getProductId, id);
-        productTagMapper.delete(tagWrapper);
-        
-        LambdaQueryWrapper<ProductImage> imageWrapper = new LambdaQueryWrapper<>();
-        imageWrapper.eq(ProductImage::getProductId, id);
-        productImageMapper.delete(imageWrapper);
-        
-        LambdaQueryWrapper<ProductApplicationScene> sceneWrapper = new LambdaQueryWrapper<>();
-        sceneWrapper.eq(ProductApplicationScene::getProductId, id);
-        productApplicationSceneMapper.delete(sceneWrapper);
+//        LambdaQueryWrapper<ProductTag> tagWrapper = new LambdaQueryWrapper<>();
+//        tagWrapper.eq(ProductTag::getProductId, id);
+//        productTagMapper.delete(tagWrapper);
+//
+//        LambdaQueryWrapper<ProductImage> imageWrapper = new LambdaQueryWrapper<>();
+//        imageWrapper.eq(ProductImage::getProductId, id);
+//        productImageMapper.delete(imageWrapper);
+//
+//        LambdaQueryWrapper<ProductApplicationScene> sceneWrapper = new LambdaQueryWrapper<>();
+//        sceneWrapper.eq(ProductApplicationScene::getProductId, id);
+//        productApplicationSceneMapper.delete(sceneWrapper);
         
         // 插入新的关联数据
-        if (request.getTags() != null && !request.getTags().isEmpty()) {
-            for (String tag : request.getTags()) {
-                ProductTag productTag = new ProductTag();
-                productTag.setProductId(id);
-                productTag.setTagName(tag);
-                productTag.setCreateTime(LocalDateTime.now());
-                productTagMapper.insert(productTag);
-            }
-        }
+//        if (request.getTag() != null && !request.getTag().isEmpty()) {
+//            for (String tag : request.getTag()) {
+//                ProductTag productTag = new ProductTag();
+//                productTag.setProductId(id);
+//                productTag.setTagName(tag);
+//                productTag.setCreateTime(LocalDateTime.now());
+//                productTagMapper.insert(productTag);
+//            }
+//        }
+
+//        if (request.getImages() != null && !request.getImages().isEmpty()) {
+//            for (int i = 0; i < request.getImages().size(); i++) {
+//                ProductImage productImage = new ProductImage();
+//                productImage.setProductId(id);
+//                productImage.setImageUrl(request.getImages().get(i));
+//                productImage.setSortOrder(i);
+//                productImage.setCreateTime(LocalDateTime.now());
+//                productImageMapper.insert(productImage);
+//            }
+//        }
         
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            for (int i = 0; i < request.getImages().size(); i++) {
-                ProductImage productImage = new ProductImage();
-                productImage.setProductId(id);
-                productImage.setImageUrl(request.getImages().get(i));
-                productImage.setSortOrder(i);
-                productImage.setCreateTime(LocalDateTime.now());
-                productImageMapper.insert(productImage);
-            }
-        }
-        
-        if (request.getApplicationScenes() != null && !request.getApplicationScenes().isEmpty()) {
-            for (String scene : request.getApplicationScenes()) {
-                ProductApplicationScene sceneEntity = new ProductApplicationScene();
-                sceneEntity.setProductId(id);
-                sceneEntity.setSceneName(scene);
-                sceneEntity.setCreateTime(LocalDateTime.now());
-                productApplicationSceneMapper.insert(sceneEntity);
-            }
-        }
+//        if (request.getApplicationScenes() != null && !request.getApplicationScenes().isEmpty()) {
+//            for (String scene : request.getApplicationScenes()) {
+//                ProductApplicationScene sceneEntity = new ProductApplicationScene();
+//                sceneEntity.setProductId(id);
+//                sceneEntity.setSceneName(scene);
+//                sceneEntity.setCreateTime(LocalDateTime.now());
+//                productApplicationSceneMapper.insert(sceneEntity);
+//            }
+//        }
         
         clearProductCache();
         
@@ -301,17 +308,24 @@ public class ProductServiceImpl implements ProductService {
         if (product == null || product.getIsDelete() == 1) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "商品不存在");
         }
-        
-        // 权限检查
-        if (!"ADMIN".equals(loginUser.getUserRole()) && !product.getUserId().equals(loginUser.getId())) {
+
+        String role = loginUser.getUserRole();
+        if (!"ADMIN".equals(role) && !"PARTNER".equals(role)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限删除此商品");
         }
-        
-        // 逻辑删除
-        product.setIsDelete(1);
-        product.setUpdateTime(LocalDateTime.now());
-        productMapper.updateById(product);
-        
+        if ("PARTNER".equals(role) && !product.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限删除此商品");
+        }
+
+        log.info("Deleting product: id={}, role={}, userId={}, ownerId={}, currentIsDelete={}",
+                id, role, loginUser.getId(), product.getUserId(), product.getIsDelete());
+
+        int rows = productMapper.deleteById(id);
+        log.info("Delete product update result: id={}, rows={}", id, rows);
+        if (rows == 0) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除失败，更新未生效");
+        }
+
         clearProductCache();
     }
     
@@ -444,6 +458,7 @@ public class ProductServiceImpl implements ProductService {
     private ProductVO convertToVO(Product product) {
         ProductVO vo = new ProductVO();
         BeanUtils.copyProperties(product, vo);
+        vo.setTag(splitTags(product.getTag()));
         vo.setIsHot(product.getIsHot() == 1);
         vo.setIsNew(product.getIsNew() == 1);
         return vo;
@@ -502,5 +517,33 @@ public class ProductServiceImpl implements ProductService {
             // 忽略缓存清除错误
         }
     }
-}
 
+    private String joinTags(List<String> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return null;
+        }
+        return tags.stream()
+                .filter(tag -> tag != null && !tag.isBlank())
+                .collect(Collectors.joining(","));
+    }
+
+    private List<String> splitTags(String tagsText) {
+        if (tagsText == null || tagsText.isBlank()) {
+            return Collections.emptyList();
+        }
+        return java.util.Arrays.stream(tagsText.split(","))
+                .map(String::trim)
+                .filter(tag -> !tag.isBlank())
+                .collect(Collectors.toList());
+    }
+
+    private String generateUniqueProductId() {
+        String productId;
+        boolean isUnique;
+        do {
+            productId = displayIDGenerator.generateDisplayID();
+            isUnique = !productMapper.existsByProductId(productId);
+        } while (!isUnique);
+        return productId;
+    }
+}

@@ -11,6 +11,7 @@ public class ProductVO {
     private Long id;
     private String name;
     private String model;
+    private String productId;
     private String gpuType;
     private Integer gpuCount;
     private String cpu;
@@ -43,4 +44,3 @@ public class ProductVO {
     private Boolean isNew;
     private LocalDateTime createTime;
 }
-

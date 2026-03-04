@@ -10,6 +10,7 @@ public class ProductListVO {
     private Long id;
     private String name;
     private String model;
+    private String productId;
     private BigDecimal price;
     private BigDecimal rating;
     private Integer gpuAvailable;
@@ -20,4 +21,3 @@ public class ProductListVO {
     private Boolean isNew;
     private String type;
 }
-

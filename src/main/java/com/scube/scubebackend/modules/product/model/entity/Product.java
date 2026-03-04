@@ -1,7 +1,9 @@
 package com.scube.scubebackend.modules.product.model.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -19,7 +21,10 @@ public class Product {
     private String name;
     
     private String model;
-    
+
+    @TableField("product_id")
+    private String productId;
+
     private String gpuType;
 
     private Integer stock;
@@ -68,6 +73,7 @@ public class Product {
     
     private LocalDateTime updateTime;
     
+    @TableField("is_delete")
+    @TableLogic
     private Integer isDelete;
 }
-
