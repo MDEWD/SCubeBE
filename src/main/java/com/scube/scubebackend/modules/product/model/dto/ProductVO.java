@@ -32,6 +32,10 @@ public class ProductVO {
     private String position;
     private String type;
     private String status;
+    /**
+     * 发布者的展示ID（user.display_id），用于后台审核列表展示
+     */
+    private String userDisplayId;
     private List<String> tag;
     private List<String> images;
     private List<String> applicationScenes;

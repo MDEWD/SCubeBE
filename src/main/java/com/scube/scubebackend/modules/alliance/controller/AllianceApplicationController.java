@@ -9,6 +9,7 @@ import com.scube.scubebackend.modules.alliance.model.dto.AllianceApplicationRevi
 import com.scube.scubebackend.modules.alliance.model.dto.AllianceApplicationUpdateRequest;
 import com.scube.scubebackend.modules.alliance.model.dto.AllianceApplicationVO;
 import com.scube.scubebackend.modules.alliance.service.AllianceApplicationService;
+import com.scube.scubebackend.modules.user.model.dto.LoginUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +34,20 @@ public class AllianceApplicationController extends BaseController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false, defaultValue = "1") Integer page,
             @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
+        LoginUser loginUser = getLoginUser();
+        boolean isAdmin = loginUser != null
+                && loginUser.getUserRole() != null
+                && "ADMIN".equalsIgnoreCase(loginUser.getUserRole());
+
+        // 管理员复用“后台列表”逻辑：直接查全量数据（服务层会做权限校验）
+        if (isAdmin) {
+            List<AllianceApplicationVO> items = allianceApplicationService.getAllApplications(status, null, page, pageSize);
+            AllianceApplicationListResponse response = new AllianceApplicationListResponse();
+            response.setTotal(items.size());
+            response.setItems(items);
+            return BaseResponse.success(response);
+        }
+
         List<AllianceApplicationVO> all = allianceApplicationService.getMyApplications();
         List<AllianceApplicationVO> filtered = all.stream()
                 .filter(item -> status == null || status.isBlank() || status.equalsIgnoreCase(item.getStatus()))
@@ -107,4 +122,3 @@ public class AllianceApplicationController extends BaseController {
         return value != null && value.toLowerCase().contains(keywordLower);
     }
 }
-
