@@ -27,6 +27,7 @@ public class ProductPublishRequest {
     private Integer stock;
     
     private String cpu;
+    private String cpuKernel;
     private String memory;
     private String systemDisk;
     private String storage;
@@ -51,10 +52,8 @@ public class ProductPublishRequest {
     private List<String> applicationScenes;
     
     private List<String> tag;
-
-    private List<String> images;
-    
     private Boolean isNewDataCenter;
     private String dataCenterDescription;
     private List<String> dataCenterImages;
+    private  String comment;
 }

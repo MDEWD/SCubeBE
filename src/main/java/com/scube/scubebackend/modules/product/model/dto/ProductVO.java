@@ -16,6 +16,7 @@ public class ProductVO {
     private String gpuType;
     private Integer gpuCount;
     private String cpu;
+    private String cpuKernel;
     private String memory;
     private String systemDisk;
     private String storage;
@@ -48,4 +49,5 @@ public class ProductVO {
     private Boolean isHot;
     private Boolean isNew;
     private LocalDateTime createTime;
+    private String comment;
 }

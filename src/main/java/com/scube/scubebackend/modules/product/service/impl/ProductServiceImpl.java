@@ -103,32 +103,6 @@ public class ProductServiceImpl implements ProductService {
         
         productMapper.insert(product);
         
-//        // 插入图片
-//        if (request.getImages() != null && !request.getImages().isEmpty()) {
-//            for (int i = 0; i < request.getImages().size(); i++) {
-//                ProductImage productImage = new ProductImage();
-//                productImage.setProductId(product.getId());
-//                productImage.setImageUrl(request.getImages().get(i));
-//                productImage.setSortOrder(i);
-//                productImage.setCreateTime(LocalDateTime.now());
-//                productImageMapper.insert(productImage);
-//            }
-//        }
-        
-//        // 插入应用场景
-//        if (request.getApplicationScenes() != null && !request.getApplicationScenes().isEmpty()) {
-//            for (String scene : request.getApplicationScenes()) {
-//                ProductApplicationScene sceneEntity = new ProductApplicationScene();
-//                sceneEntity.setProductId(product.getId());
-//                sceneEntity.setSceneName(scene);
-//                sceneEntity.setCreateTime(LocalDateTime.now());
-//                productApplicationSceneMapper.insert(sceneEntity);
-//            }
-//        }
-        
-        // 清除缓存
-//        clearProductCache();
-        
         return convertToVO(product);
     }
     

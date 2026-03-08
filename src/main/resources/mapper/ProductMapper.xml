@@ -14,6 +14,7 @@
         <result column="stock" property="stock" />
         <result column="gpu_count" property="gpuCount" />
         <result column="cpu" property="cpu" />
+        <result column="cpu_kernel" property="cpuKernel" />
         <result column="memory" property="memory" />
         <result column="system_disk" property="systemDisk" />
         <result column="storage" property="storage" />
@@ -34,6 +35,7 @@
         <result column="is_delete" property="isDelete" />
         <result column="high_speed_net_card" property="highSpeedNetCard" />
         <result column="tag" property="tag" />
+        <result column="comment" property="comment" />
         <result column="pay_mode" property="payMode" />
     </resultMap>
     

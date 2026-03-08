@@ -34,6 +34,8 @@ public class Product {
     private Integer gpuCount;
     
     private String cpu;
+
+    private String cpuKernel;
     
     private String memory;
     
@@ -74,6 +76,8 @@ public class Product {
     private LocalDateTime createTime;
     
     private LocalDateTime updateTime;
+
+    private String comment;
     
     @TableField("is_delete")
     @TableLogic
