@@ -9,6 +9,7 @@
         <result column="name" property="name" />
         <result column="model" property="model" />
         <result column="product_id" property="productId" />
+        <result column="gpu_brand" property="gpuBrand" />
         <result column="gpu_type" property="gpuType" />
         <result column="stock" property="stock" />
         <result column="gpu_count" property="gpuCount" />

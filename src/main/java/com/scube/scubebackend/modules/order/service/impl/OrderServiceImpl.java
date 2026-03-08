@@ -7,19 +7,19 @@ import com.scube.scubebackend.common.ErrorCode;
 import com.scube.scubebackend.exception.BusinessException;
 import com.scube.scubebackend.modules.order.mapper.OrderMapper;
 import com.scube.scubebackend.modules.order.model.dto.AdminOrderVO;
-import com.scube.scubebackend.modules.order.model.dto.CustomerOrderVO;
+import com.scube.scubebackend.modules.order.model.dto.CustomerOrdersResponse.CustomerOrderVO;
+import com.scube.scubebackend.modules.order.model.dto.CustomerOrdersResponse;
 import com.scube.scubebackend.modules.order.model.dto.PartnerOrdersResponse;
 import com.scube.scubebackend.modules.order.model.dto.PartnerOrdersResponse.PartnerOrderVO;
-import com.scube.scubebackend.modules.order.model.dto.PartnerOrdersResponse.PartnerStatsVO;
 import com.scube.scubebackend.modules.order.model.entity.Order;
 import com.scube.scubebackend.modules.order.service.OrderService;
+import com.scube.scubebackend.modules.user.mapper.UserMapper;
 import com.scube.scubebackend.modules.user.model.dto.LoginUser;
+import com.scube.scubebackend.modules.user.model.entity.User;
 import com.scube.scubebackend.util.UserContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -28,15 +28,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Autowired
     private OrderMapper orderMapper;
 
-    @Override
-    public IPage<CustomerOrderVO> getCustomerOrders(int page, int pageSize, String status) {
-        LoginUser currentUser = UserContext.getUser();
-        if (currentUser == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
-        }
-        Page<CustomerOrderVO> pageParam = new Page<>(page, pageSize);
-        return orderMapper.selectCustomerOrders(pageParam, currentUser.getId(), status);
-    }
+    @Autowired
+    private UserMapper userMapper;
 
     @Override
     public PartnerOrdersResponse getPartnerOrders(int page, int pageSize) {
@@ -45,23 +38,62 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
 
-        // Ensure user is a partner? The controller/security layer should probably handle this mostly,
-        // but no harm checking role here if strictly needed. For now, we trust the caller context or just query.
-
-        Page<PartnerOrderVO> pageParam = new Page<>(page, pageSize);
-        IPage<PartnerOrderVO> ordersPage = orderMapper.selectPartnerOrders(pageParam, currentUser.getId());
-
-        PartnerStatsVO stats = orderMapper.selectPartnerStats(currentUser.getId());
-        if (stats == null) {
-            stats = new PartnerStatsVO();
-            stats.setMonthSettlement("0.00");
-            stats.setActiveContracts(0);
+        String supplierDisplayId = currentUser.getDisplayId();
+        if (supplierDisplayId == null || supplierDisplayId.isBlank()) {
+            if (currentUser.getId() == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户id缺失");
+            }
+            User user = userMapper.selectById(currentUser.getId());
+            if (user == null || (user.getIsDelete() != null && user.getIsDelete() == 1)) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+            }
+            supplierDisplayId = user.getDisplayId();
+            // 回写，避免同一次请求/后续逻辑重复查库
+            currentUser.setDisplayId(supplierDisplayId);
         }
 
+        if (supplierDisplayId == null || supplierDisplayId.isBlank()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户displayId缺失");
+        }
+
+        Page<PartnerOrderVO> pageParam = new Page<>(page, pageSize);
+        IPage<PartnerOrderVO> ordersPage = orderMapper.selectPartnerOrders(pageParam, supplierDisplayId);
+
         PartnerOrdersResponse response = new PartnerOrdersResponse();
-        response.setStats(stats);
         response.setList(ordersPage.getRecords());
 
+        return response;
+    }
+
+    @Override
+    public CustomerOrdersResponse getCustomerOrders(int page, int pageSize) {
+        LoginUser currentUser = UserContext.getUser();
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+
+        String userDisplayId = currentUser.getDisplayId();
+        if (userDisplayId == null || userDisplayId.isBlank()) {
+            if (currentUser.getId() == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户id缺失");
+            }
+            User user = userMapper.selectById(currentUser.getId());
+            if (user == null || (user.getIsDelete() != null && user.getIsDelete() == 1)) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+            }
+            userDisplayId = user.getDisplayId();
+            currentUser.setDisplayId(userDisplayId);
+        }
+
+        if (userDisplayId == null || userDisplayId.isBlank()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户displayId缺失");
+        }
+
+        Page<CustomerOrdersResponse> customerParam = new Page<>(page, pageSize);
+        IPage<CustomerOrderVO> ordersPage = orderMapper.selectUserOrdersByDisplayId(customerParam, userDisplayId);
+
+        CustomerOrdersResponse response = new CustomerOrdersResponse();
+        response.setList(ordersPage.getRecords());
         return response;
     }
 
@@ -71,4 +103,3 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         return orderMapper.selectAdminOrders(pageParam);
     }
 }
-

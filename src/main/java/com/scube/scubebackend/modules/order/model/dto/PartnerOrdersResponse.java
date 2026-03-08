@@ -5,23 +5,17 @@ import java.util.List;
 
 @Data
 public class PartnerOrdersResponse {
-
-    private PartnerStatsVO stats;
     private List<PartnerOrderVO> list;
-
-    @Data
-    public static class PartnerStatsVO {
-        private String monthSettlement;
-        private Integer activeContracts;
-    }
 
     @Data
     public static class PartnerOrderVO {
         private String id;
+        private String productId;
         private String supplierName;
-        private String dateStart;
-        private String dateEnd;
-        private String settlementAmount;
+        private String startDate;
+        private String endDate;
+        private Double customerAmount;
+        private Double customerTotalAmount;
         private String paymentMethod;
         private String contact;
     }

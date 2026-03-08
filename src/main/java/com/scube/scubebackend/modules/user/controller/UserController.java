@@ -12,13 +12,11 @@ import com.scube.scubebackend.modules.user.model.dto.WeChatUserInfo;
 import com.scube.scubebackend.modules.user.service.UserService;
 import com.scube.scubebackend.modules.user.service.WeChatService;
 import com.scube.scubebackend.modules.order.service.OrderService;
-import com.scube.scubebackend.modules.order.model.dto.CustomerOrderVO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 
@@ -26,10 +24,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 @RequestMapping("/api/user")
 @Slf4j
 public class UserController extends BaseController {
-    
+
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private WeChatService weChatService;
 
@@ -47,7 +45,7 @@ public class UserController extends BaseController {
         Map<String, String> result = weChatService.generateLoginQrCode();
         return BaseResponse.success(result);
     }
-    
+
     /**
      * 检查Ticket是否已被扫描（轮询接口）
      */
@@ -71,7 +69,7 @@ public class UserController extends BaseController {
         log.info("/check-ticket done: ticket={}, scanned={}, authorized={}", ticket, response.getScanned(), response.getAuthorized());
         return BaseResponse.success(response);
     }
-    
+
     /**
      * 生成微信网页授权链接
      * @param redirectUri 授权后重定向的URI（需要URL编码）
@@ -117,18 +115,6 @@ public class UserController extends BaseController {
     public BaseResponse<UserProfileVO> getCurrentUserProfile() {
         UserProfileVO userProfile = userService.getCurrentUserProfile();
         return BaseResponse.success(userProfile);
-    }
-
-    /**
-     * 获取客户订单列表
-     */
-    @GetMapping("/orders")
-    public BaseResponse<List<CustomerOrderVO>> getUserOrders(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int pageSize,
-            @RequestParam(required = false) String status) {
-        IPage<CustomerOrderVO> orderPage = orderService.getCustomerOrders(page, pageSize, status);
-        return BaseResponse.success(orderPage.getRecords());
     }
 
     /**

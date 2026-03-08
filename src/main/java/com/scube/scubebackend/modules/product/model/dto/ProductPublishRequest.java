@@ -14,6 +14,8 @@ public class ProductPublishRequest {
     
 //    @NotBlank(message = "商品型号不能为空")
     private String model;
+
+    private String gpuBrand;
     
     @NotBlank(message = "GPU型号不能为空")
     private String gpuType;

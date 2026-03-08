@@ -25,6 +25,8 @@ public class Product {
     @TableField("product_id")
     private String productId;
 
+    private String gpuBrand;
+
     private String gpuType;
 
     private Integer stock;

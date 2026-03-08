@@ -2,60 +2,20 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.scube.scubebackend.modules.order.mapper.OrderMapper">
 
-    <select id="selectCustomerOrders" resultType="com.scube.scubebackend.modules.order.model.dto.CustomerOrderVO">
-        SELECT
-            o.order_no as id,
-            cust.nickname as customerName,
-            p.name as productName,
-            p.gpu_count as productQuantity,
-            DATE_FORMAT(o.start_time, '%Y-%m-%d') as startTime,
-            CASE
-                WHEN o.end_time IS NULL THEN '无固定期限'
-                ELSE DATE_FORMAT(o.end_time, '%Y-%m-%d')
-            END as endTime,
-            o.amount as amount,
-            o.amount as totalAmount,
-            '月付' as paymentMethod,
-            'System' as contact,
-            '' as remarks,
-            o.status as status
-        FROM `order` o
-        LEFT JOIN `user` cust ON o.user_id = cust.id
-        LEFT JOIN `product` p ON o.product_id = p.id
-        WHERE o.user_id = #{userId}
-          AND o.is_delete = 0
-        <if test="status != null and status != ''">
-            AND o.status = #{status}
-        </if>
-        ORDER BY o.create_time DESC
-    </select>
-
     <select id="selectPartnerOrders" resultType="com.scube.scubebackend.modules.order.model.dto.PartnerOrdersResponse$PartnerOrderVO">
         SELECT
             o.order_no as id,
-            supp.nickname as supplierName,
-            DATE_FORMAT(o.start_time, '%Y-%m-%d') as dateStart,
-            DATE_FORMAT(o.end_time, '%Y-%m-%d') as dateEnd,
-            o.amount as settlementAmount,
-            '季付' as paymentMethod,
-            'System' as contact
+            o.supplier_name as supplierName,
+            DATE_FORMAT(o.start_time, '%Y-%m-%d') as startDate,
+            DATE_FORMAT(o.end_time, '%Y-%m-%d') as endDate,
+            o.customer_amount as customerAmount,
+            o.customer_total_amount as customerTotalAmount,
+            o.payment_method as paymentMethod,
+            o.contact as contact
         FROM `order` o
-        LEFT JOIN `product` p ON o.product_id = p.id
-        LEFT JOIN `user` supp ON p.user_id = supp.id
-        WHERE p.user_id = #{supplierId}
+        WHERE o.supplier_display_id = #{supplierDisplayId}
           AND o.is_delete = 0
         ORDER BY o.create_time DESC
-    </select>
-
-    <select id="selectPartnerStats" resultType="com.scube.scubebackend.modules.order.model.dto.PartnerOrdersResponse$PartnerStatsVO">
-        SELECT
-           COALESCE(SUM(o.amount), 0) as monthSettlement,
-           COUNT(DISTINCT o.id) as activeContracts
-        FROM `order` o
-        LEFT JOIN `product` p ON o.product_id = p.id
-        WHERE p.user_id = #{supplierId}
-        AND o.status = 'active'
-        AND o.is_delete = 0
     </select>
 
     <select id="selectAdminOrders" resultType="com.scube.scubebackend.modules.order.model.dto.AdminOrderVO">
@@ -77,6 +37,25 @@
         LEFT JOIN `product` p ON o.product_id = p.id
         LEFT JOIN `user` supp ON p.user_id = supp.id
         WHERE o.is_delete = 0
+        ORDER BY o.create_time DESC
+    </select>
+
+    <select id="selectUserOrdersByDisplayId" resultType="com.scube.scubebackend.modules.order.model.dto.CustomerOrdersResponse$CustomerOrderVO">
+        SELECT
+            o.order_no as id,
+            o.product_id as productId,
+            o.customer_product as customerProduct,
+            DATE_FORMAT(o.start_time, '%Y-%m-%d') as startDate,
+            DATE_FORMAT(o.end_time, '%Y-%m-%d') as endDate,
+            o.customer_product_quantity as customerProductQuantity,
+            o.customer_amount as customerAmount,
+            o.customer_total_amount as customerTotalAmount,
+            o.payment_method as paymentMethod,
+            o.remark as remark,
+            o.contact as contact
+        FROM `order` o
+        WHERE o.user_display_id = #{userDisplayId}
+          AND o.is_delete = 0
         ORDER BY o.create_time DESC
     </select>
 

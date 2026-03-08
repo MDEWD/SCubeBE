@@ -183,9 +183,8 @@ public class AdminOrderController extends BaseController {
         if (order == null || (order.getIsDelete() != null && order.getIsDelete() == 1)) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "订单不存在");
         }
-        order.setIsDelete(1);
-        order.setUpdateTime(LocalDateTime.now());
-        orderMapper.updateById(order);
+        // 使用 MyBatis-Plus 逻辑删除：会按全局配置/@TableLogic 将 is_delete 更新为 1
+        orderMapper.deleteById(id);
         return BaseResponse.success(true);
     }
 

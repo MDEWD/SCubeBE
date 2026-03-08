@@ -12,6 +12,7 @@ public class ProductVO {
     private String name;
     private String model;
     private String productId;
+    private String gpuBrand;
     private String gpuType;
     private Integer gpuCount;
     private String cpu;

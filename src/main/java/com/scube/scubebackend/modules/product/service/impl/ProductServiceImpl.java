@@ -1,7 +1,6 @@
 package com.scube.scubebackend.modules.product.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scube.scubebackend.common.ErrorCode;
 import com.scube.scubebackend.exception.BusinessException;
