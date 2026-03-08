@@ -74,7 +74,7 @@ public class ProductServiceImpl implements ProductService {
         BeanUtils.copyProperties(request, product);
         product.setTag(joinTags(request.getTag()));
         product.setUserId(loginUser.getId());
-        product.setProductId(generateUniqueProductId());
+        product.setProductId("P" + generateUniqueProductId());
         product.setCreateTime(LocalDateTime.now());
         product.setUpdateTime(LocalDateTime.now());
         product.setIsDelete(0);

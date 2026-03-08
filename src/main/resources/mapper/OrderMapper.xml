@@ -23,6 +23,7 @@
         LEFT JOIN `user` cust ON o.user_id = cust.id
         LEFT JOIN `product` p ON o.product_id = p.id
         WHERE o.user_id = #{userId}
+          AND o.is_delete = 0
         <if test="status != null and status != ''">
             AND o.status = #{status}
         </if>
@@ -42,6 +43,7 @@
         LEFT JOIN `product` p ON o.product_id = p.id
         LEFT JOIN `user` supp ON p.user_id = supp.id
         WHERE p.user_id = #{supplierId}
+          AND o.is_delete = 0
         ORDER BY o.create_time DESC
     </select>
 
@@ -53,6 +55,7 @@
         LEFT JOIN `product` p ON o.product_id = p.id
         WHERE p.user_id = #{supplierId}
         AND o.status = 'active'
+        AND o.is_delete = 0
     </select>
 
     <select id="selectAdminOrders" resultType="com.scube.scubebackend.modules.order.model.dto.AdminOrderVO">
@@ -73,6 +76,7 @@
         LEFT JOIN `user` cust ON o.user_id = cust.id
         LEFT JOIN `product` p ON o.product_id = p.id
         LEFT JOIN `user` supp ON p.user_id = supp.id
+        WHERE o.is_delete = 0
         ORDER BY o.create_time DESC
     </select>
 

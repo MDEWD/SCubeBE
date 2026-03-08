@@ -12,6 +12,7 @@ import com.scube.scubebackend.modules.product.service.ProductService;
 import com.scube.scubebackend.modules.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -42,7 +43,8 @@ public class AdminController extends BaseController {
     /**
      * 获取全平台订单（双边台账）
      */
-    @GetMapping("/orders")
+    @GetMapping("/orders/list")
+    @PreAuthorize("hasRole('ADMIN')")
     public BaseResponse<List<AdminOrderVO>> getAllOrders(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {

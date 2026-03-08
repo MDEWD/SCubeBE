@@ -73,7 +73,7 @@ public class UserServiceImpl implements UserService {
                     displayId = displayIDGenerator.generateDisplayID();
                     isUnique = !userMapper.existsByDisplayId(displayId);
                 } while (!isUnique);
-                user.setDisplayId(displayId);
+                user.setDisplayId("U" + displayId);
                 userMapper.insert(user);
             } else {
                 // 更新现有用户的昵称和头像（如果提供且与现有不同）

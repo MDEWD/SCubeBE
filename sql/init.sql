@@ -101,3 +101,42 @@ CREATE TABLE `alliance_application` (
     KEY `idx_kind` (`kind`),
     KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='合作伙伴申请表';
+
+-- ============================================
+-- 4. 订单表
+-- ============================================
+DROP TABLE IF EXISTS `order`;
+CREATE TABLE `order` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `user_id` BIGINT DEFAULT NULL COMMENT '下单用户ID（可为空，后台录入时允许仅存display_id）',
+    `user_display_id` VARCHAR(64) DEFAULT NULL COMMENT '下单用户展示ID',
+    `customer_name` VARCHAR(100) DEFAULT NULL COMMENT '客户名称',
+    `customer_product` VARCHAR(200) DEFAULT NULL COMMENT '客户购买产品名称',
+    `product_id` VARCHAR(64) DEFAULT NULL COMMENT '商品展示ID（product.product_id）',
+    `customer_product_quantity` INT DEFAULT NULL COMMENT '客户购买数量',
+    `customer_amount` DECIMAL(10,2) DEFAULT NULL COMMENT '客户单价/金额',
+    `customer_total_amount` DECIMAL(10,2) DEFAULT NULL COMMENT '客户总金额',
+    `payment_method` VARCHAR(50) DEFAULT NULL COMMENT '付款方式',
+    `contact` VARCHAR(100) DEFAULT NULL COMMENT '联系人/联系方式',
+    `supplier_name` VARCHAR(100) DEFAULT NULL COMMENT '供应商名称',
+    `supplier_display_id` VARCHAR(64) DEFAULT NULL COMMENT '供应商展示ID',
+    `remark` VARCHAR(500) DEFAULT NULL COMMENT '备注',
+
+    `order_no` VARCHAR(64) NOT NULL COMMENT '订单号',
+    `amount` DECIMAL(10,2) DEFAULT NULL COMMENT '金额（兼容字段）',
+    `status` VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '订单状态',
+    `start_time` DATETIME DEFAULT NULL COMMENT '开始时间',
+    `end_time` DATETIME DEFAULT NULL COMMENT '结束时间',
+
+    `create_time` DATETIME NOT NULL COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL COMMENT '更新时间',
+    `is_delete` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_order_no` (`order_no`),
+    KEY `idx_order_user_id` (`user_id`),
+    KEY `idx_order_product_id` (`product_id`),
+    KEY `idx_order_status` (`status`),
+    KEY `idx_order_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单表';
+
