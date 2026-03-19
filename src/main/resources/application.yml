@@ -22,11 +22,11 @@ server:
 wechat:
   mp:
     # 微信测试号配置（从 https://mp.weixin.qq.com/debug/cgi-bin/sandboxinfo 获取）
-    app-id: ${WECHAT_MP_APPID:wxf10bccf1a861aeb7}                    # 测试号AppID
-    secret: ${WECHAT_MP_SECRET:832b070364fdd4a6c83da1fbd8a0299f}      # 测试号AppSecret
+    app-id: ${WECHAT_MP_APPID:wxc590a385d7af62a0}                    # 测试号AppID
+    secret: ${WECHAT_MP_SECRET:b88ce048079df8f9e58971442969132f}      # 测试号AppSecret
     token: ${WECHAT_MP_TOKEN:123456}                                  # 自定义Token（用于验证签名，需与测试号后台配置一致）
-    aes-key:                                       # 消息加解密密钥（可选，测试环境可以不填）
-    oauth-domain: http://g6789f86.natappfree.cc          # OAuth回调域名（本地开发使用localhost，生产环境需要公网域名）
+    aes-key: ftnxes1EdmEPbUBGEuxENLvz5C8hg72q09SGnyECAuN                                      # 消息加解密密钥（可选，测试环境可以不填）
+    oauth-domain: ${WECHAT_MP_OAUTH_DOMAIN:www.suancube.com}          # OAuth回调域名（本地开发使用localhost，生产环境需要公网域名）
 
 jwt:
   secret: scube-secret-key-for-jwt-token-generation-minimum-256-bits

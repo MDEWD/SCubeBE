@@ -22,6 +22,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -84,7 +89,41 @@ public class WeChatServiceImpl implements WeChatService {
 
             return result;
         } catch (WxErrorException e) {
-            throw new RuntimeException("生成二维码失败: " + e.getMessage(), e);
+            // 40164: invalid ip, not in whitelist
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("40164")) {
+                List<String> localIps = getLocalIpv4AddrsSafe();
+                log.warn("微信接口返回 40164 (IP不在白名单). 本机网卡IP={}, 但微信校验的是后端出网公网IP(不是127.0.0.1). 原始错误={}", localIps, msg);
+                throw new RuntimeException(
+                        "生成二维码失败: 微信返回40164(IP不在白名单)。注意白名单需要配置‘调用微信接口的公网出口IP’，本地填127.0.0.1无效；请把报错里提示的公网IP加入白名单后重试。原始错误：" + msg,
+                        e
+                );
+            }
+            throw new RuntimeException("生成二维码失败: " + msg, e);
+        }
+    }
+
+    private List<String> getLocalIpv4AddrsSafe() {
+        try {
+            List<String> list = new ArrayList<>();
+            Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+            while (ifaces != null && ifaces.hasMoreElements()) {
+                NetworkInterface ni = ifaces.nextElement();
+                if (!ni.isUp() || ni.isLoopback()) {
+                    continue;
+                }
+                Enumeration<InetAddress> addrs = ni.getInetAddresses();
+                while (addrs.hasMoreElements()) {
+                    InetAddress addr = addrs.nextElement();
+                    String host = addr.getHostAddress();
+                    if (host != null && host.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
+                        list.add(host);
+                    }
+                }
+            }
+            return list;
+        } catch (Exception ignore) {
+            return java.util.Collections.emptyList();
         }
     }
 
@@ -121,7 +160,7 @@ public class WeChatServiceImpl implements WeChatService {
                         // 根据sceneId查找对应的Ticket
                         String sceneKey = "wechat:qr:scene:" + sceneId;
                         String ticketStr = (String) redisTemplate.opsForValue().get(sceneKey);
-                        log.debug("根据sceneId查找Ticket: {} -> {}", sceneKey, ticketStr);
+                        log.debug("根据sceneId��找Ticket: {} -> {}", sceneKey, ticketStr);
 
                         if (ticketStr != null) {
                             // 生成授权链接（使用ticket作为state参数）
@@ -133,8 +172,6 @@ public class WeChatServiceImpl implements WeChatService {
 
                             // 2) 同时返回被动回复（防止客服消息受限/失败时用户看不到）
                             String message = "欢迎关注 SCube！\n\n" +
-                                    "我已给你发送了一条授权登录消息，请在公众号对话里点击链接完成授权。\n\n" +
-                                    "如果未收到，可点击这里：\n" +
                                     "<a href=\"" + authorizationUrl + "\">点击这里立即登录</a>";
 
                             return buildTextMessage(toUserName, fromUserName, message);
@@ -173,7 +210,7 @@ public class WeChatServiceImpl implements WeChatService {
                           String authorizationUrl = buildAuthorizationUrl(redirectUri, ticketStr);
                           sendKefuAuthLink(fromUserName, authorizationUrl);
 
-                          String message = "扫码成功！我已给你发送授权登录链接，请在公众号聊天窗口点击完成授权。";
+                          String message = "扫码成功！我已给你发送授权登录链接。";
                           return buildTextMessage(toUserName, fromUserName, message);
                         }
                     } catch (NumberFormatException e) {
@@ -202,7 +239,10 @@ public class WeChatServiceImpl implements WeChatService {
             }
 
             // 默认回复
-            return buildTextMessage(toUserName, fromUserName, "欢迎关注！发送\"登录\"获取验证码。");
+            return buildTextMessage(toUserName, fromUserName, "你好，我的炼丹师盆友！\n" +
+                    "心之所向目之所及，踏上征途势在必得！\n" +
+                    "算力方超强算力补给已就位，全程 buff 加持，助您稳稳上岸～\n" +
+                    "本号持续更新行业干货，福利活动，记得常来戳戳哦✨[爱心]");
 
         } catch (Exception e) {
             log.error("处理微信回调失败", e);

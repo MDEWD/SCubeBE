@@ -26,6 +26,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/health", "/actuator/**").permitAll()
+                // 静态资源（用于微信网页授权域名校验文件、favicon等）
+                .requestMatchers("/MP_verify_*.txt", "/favicon.ico", "/static/**", "/webjars/**").permitAll()
                 .requestMatchers("/api/user/login", "/api/user/logout", "/api/user/qr-code", "/api/user/check-ticket",
                     "/api/wechat/**", "/api/home/**", "/api/product/list", "/api/product/{id}", 
                     "/api/product/{productId}/comments", "/api/post/list", "/api/post/{id}").permitAll()
@@ -36,4 +38,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-
