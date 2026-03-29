@@ -168,3 +168,19 @@ CREATE TABLE `product_demand` (
     KEY `idx_pd_user_display_id` (`user_display_id`),
     KEY `idx_pd_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='产品需求表';
+-- ============================================
+-- 6. 商品收藏表 (product_favorite)
+-- ============================================
+DROP TABLE IF EXISTS `product_favorite`;
+CREATE TABLE `product_favorite` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_display_id` VARCHAR(64) NOT NULL COMMENT '用户展示ID',
+  `product_id` VARCHAR(64) NOT NULL COMMENT '商品展示ID',
+  `create_time` DATETIME NOT NULL COMMENT '收藏时间',
+  `update_time` DATETIME NOT NULL COMMENT '更新时间',
+  `is_delete` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_product` (`user_display_id`, `product_id`),
+  KEY `idx_pf_user_display` (`user_display_id`),
+  KEY `idx_pf_product` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品收藏表';

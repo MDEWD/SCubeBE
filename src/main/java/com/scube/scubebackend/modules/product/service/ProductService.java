@@ -24,4 +24,9 @@ public interface ProductService {
 
     List<AuditRequest> getPendingAudits();
     void auditProduct(String auditId, AuditDecision decision);
+
+    /**
+     * 根据展示用 productId 列表批量获取产品信息（包含详情）
+     */
+    List<ProductVO> getProductsByProductIds(List<String> productIds);
 }

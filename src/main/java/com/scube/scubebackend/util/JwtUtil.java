@@ -16,7 +16,7 @@ public class JwtUtil {
     @Value("${jwt.secret:scube-secret-key-for-jwt-token-generation-minimum-256-bits}")
     private String secret;
     
-    @Value("${jwt.expiration:604800000}") // 7 days
+    @Value("${jwt.expiration:259200000}") // 3 days (in milliseconds)
     private Long expiration;
     
     private SecretKey getSigningKey() {
@@ -36,7 +36,22 @@ public class JwtUtil {
                 .signWith(getSigningKey())
                 .compact();
     }
-    
+
+    // Overload: include displayId in token claims for quick access
+    public String generateToken(Long userId, String role, String displayId) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + expiration);
+
+        return Jwts.builder()
+                .setSubject(userId.toString())
+                .claim("role", role)
+                .claim("displayId", displayId)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
     public Claims parseToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -54,7 +69,13 @@ public class JwtUtil {
         Claims claims = parseToken(token);
         return claims.get("role", String.class);
     }
-    
+
+    // New: read displayId from token if present
+    public String getDisplayIdFromToken(String token) {
+        Claims claims = parseToken(token);
+        return claims.get("displayId", String.class);
+    }
+
     public boolean validateToken(String token) {
         try {
             parseToken(token);
@@ -64,4 +85,3 @@ public class JwtUtil {
         }
     }
 }
-

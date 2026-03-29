@@ -97,9 +97,9 @@ public class UserServiceImpl implements UserService {
                 }
             }
             
-            // 生成JWT Token
-            String token = jwtUtil.generateToken(user.getId(), user.getUserRole());
-            
+            // 生成JWT Token（包含 displayId，便于后续请求无需额外 DB 查询）
+            String token = jwtUtil.generateToken(user.getId(), user.getUserRole(), user.getDisplayId());
+
             // 构建响应
             LoginResponse response = new LoginResponse();
             response.setToken(token);

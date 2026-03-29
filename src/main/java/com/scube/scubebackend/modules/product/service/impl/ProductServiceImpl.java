@@ -24,6 +24,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import com.scube.scubebackend.modules.product.mapper.ProductApplicationSceneMapper;
 import com.scube.scubebackend.modules.product.mapper.ProductImageMapper;
@@ -428,6 +429,25 @@ public class ProductServiceImpl implements ProductService {
         clearProductCache();
     }
 
+    @Override
+    public List<ProductVO> getProductsByProductIds(List<String> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Product::getProductId, productIds)
+               .eq(Product::getIsDelete, 0)
+               .eq(Product::getStatus, "ACTIVE");
+        List<Product> products = productMapper.selectList(wrapper);
+        List<ProductVO> vos = products.stream().map(this::convertToVO).toList();
+
+        // preserve input order by productIds
+        return productIds.stream()
+                .map(pid -> vos.stream().filter(v -> pid.equals(v.getProductId())).findFirst().orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
     private ProductVO convertToVO(Product product) {
         ProductVO vo = new ProductVO();
         BeanUtils.copyProperties(product, vo);
@@ -445,7 +465,7 @@ public class ProductServiceImpl implements ProductService {
         if (tags != null && !tags.isEmpty()) {
             vo.setTag(tags.stream().map(ProductTag::getTagName).collect(Collectors.toList()));
         }
-        
+
         // 加载图片
         LambdaQueryWrapper<ProductImage> imageWrapper = new LambdaQueryWrapper<>();
         imageWrapper.eq(ProductImage::getProductId, productId)
@@ -454,7 +474,7 @@ public class ProductServiceImpl implements ProductService {
         if (images != null && !images.isEmpty()) {
             vo.setImages(images.stream().map(ProductImage::getImageUrl).collect(Collectors.toList()));
         }
-        
+
         // 加载应用场景
         LambdaQueryWrapper<ProductApplicationScene> sceneWrapper = new LambdaQueryWrapper<>();
         sceneWrapper.eq(ProductApplicationScene::getProductId, productId);
@@ -463,7 +483,7 @@ public class ProductServiceImpl implements ProductService {
             vo.setApplicationScenes(scenes.stream().map(ProductApplicationScene::getSceneName).collect(Collectors.toList()));
         }
     }
-    
+
     private void updateViewCount(Long productId) {
         // 异步更新浏览量
         new Thread(() -> {
@@ -478,7 +498,7 @@ public class ProductServiceImpl implements ProductService {
             }
         }).start();
     }
-    
+
     private void clearProductCache() {
         // 清除相关缓存
         try {
