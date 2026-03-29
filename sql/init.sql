@@ -144,3 +144,27 @@ CREATE TABLE `order` (
     KEY `idx_order_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单表';
 
+-- ============================================
+-- 5. 产品需求表（product_demand）
+-- ============================================
+DROP TABLE IF EXISTS `product_demand`;
+CREATE TABLE `product_demand` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `user_id` BIGINT DEFAULT NULL COMMENT '发布者用户ID',
+    `user_display_id` VARCHAR(64) DEFAULT NULL COMMENT '发布者展示ID',
+    `model` VARCHAR(255) DEFAULT NULL COMMENT '型号',
+    `quantity` INT DEFAULT NULL COMMENT '数量',
+    `rental_period_value` INT DEFAULT NULL COMMENT '租期长度（数值）',
+    `rental_period` VARCHAR(16) DEFAULT NULL COMMENT '租期单位（天/月/年）',
+    `expected_price` DECIMAL(12,2) DEFAULT NULL COMMENT '预期价格',
+    `region_requirement` VARCHAR(255) DEFAULT NULL COMMENT '地区要求',
+    `contact` VARCHAR(255) DEFAULT NULL COMMENT '联系方式',
+    `remark` TEXT DEFAULT NULL COMMENT '备注',
+    `create_time` DATETIME NOT NULL COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL COMMENT '更新时间',
+    `is_delete` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    PRIMARY KEY (`id`),
+    KEY `idx_pd_user_id` (`user_id`),
+    KEY `idx_pd_user_display_id` (`user_display_id`),
+    KEY `idx_pd_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='产品需求表';
