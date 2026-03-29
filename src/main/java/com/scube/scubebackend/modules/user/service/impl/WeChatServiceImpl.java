@@ -13,9 +13,12 @@ import me.chanjar.weixin.mp.bean.result.WxMpUser;
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +67,20 @@ public class WeChatServiceImpl implements WeChatService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @PostConstruct
+    private void initRestTemplate() {
+        try {
+            List<HttpMessageConverter<?>> converters = new ArrayList<>(restTemplate.getMessageConverters());
+            // Remove any existing StringHttpMessageConverter and add one with UTF-8
+            converters.removeIf(c -> c instanceof StringHttpMessageConverter);
+            converters.add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+            restTemplate.setMessageConverters(converters);
+            log.debug("RestTemplate StringHttpMessageConverter set to UTF-8");
+        } catch (Exception e) {
+            log.warn("无法为 RestTemplate 配置 UTF-8 编码: {}", e.getMessage());
+        }
+    }
 
     @Override
     public Map<String, String> generateLoginQrCode() {
@@ -146,7 +164,12 @@ public class WeChatServiceImpl implements WeChatService {
             log.debug("解析结果 - msgType: {}, event: {}, eventKey: {}, ticket: {}", msgType, event, eventKey, ticket);
             log.debug("fromUserName (openId): {}", fromUserName);
 
+            String welcomeMessage = "你好，我的炼丹师盆友！\n" +
+            "心之所向目之所及，踏上征途势在必得！\n" +
+            "算力方超强算力补给已就位，全程 buff 加持，助您稳稳上岸～\n" +
+            "本号持续更新行业干货，福利活动，记得常来戳戳哦✨[爱心] \n\n";
             // 处理关注事件（用户扫码关注公众号）
+            
             if ("event".equals(msgType) && "subscribe".equals(event)) {
                 log.info("处理subscribe事件");
                 // 如果是扫码关注，EventKey格式为: qrscene_sceneId
@@ -171,7 +194,7 @@ public class WeChatServiceImpl implements WeChatService {
                             sendKefuAuthLink(fromUserName, authorizationUrl);
 
                             // 2) 同时返回被动回复（防止客服消息受限/失败时用户看不到）
-                            String message = "欢迎关注 SCube！\n\n" +
+                            String message = welcomeMessage + "欢迎关注 SCube！\n\n" +
                                     "<a href=\"" + authorizationUrl + "\">点击这里立即登录</a>";
 
                             return buildTextMessage(toUserName, fromUserName, message);
@@ -179,6 +202,8 @@ public class WeChatServiceImpl implements WeChatService {
                     } catch (NumberFormatException e) {
                         log.warn("sceneId解析失败: {}, 错误: {}", sceneIdStr, e.getMessage());
                     }
+                } else {
+                    return buildTextMessage(toUserName, fromUserName, welcomeMessage);
                 }
             }
 
@@ -238,11 +263,7 @@ public class WeChatServiceImpl implements WeChatService {
                 }
             }
 
-            // 默认回复
-            return buildTextMessage(toUserName, fromUserName, "你好，我的炼丹师盆友！\n" +
-                    "心之所向目之所及，踏上征途势在必得！\n" +
-                    "算力方超强算力补给已就位，全程 buff 加持，助您稳稳上岸～\n" +
-                    "本号持续更新行业干货，福利活动，记得常来戳戳哦✨[爱心]");
+            return "success";
 
         } catch (Exception e) {
             log.error("处理微信回调失败", e);
@@ -560,7 +581,21 @@ public class WeChatServiceImpl implements WeChatService {
      * 获取OAuth回调URI
      */
     private String getOAuthRedirectUri() {
-        return oauthDomain + "/api/wechat/oauth/callback";
+        // Ensure the configured oauthDomain includes a scheme (http/https).
+        String domain = oauthDomain == null ? "" : oauthDomain.trim();
+        if (domain.isEmpty()) {
+            // fallback to localhost with port from application if misconfigured
+            domain = "http://localhost:8077";
+        }
+        if (!domain.startsWith("http://") && !domain.startsWith("https://")) {
+            // default to http for local/dev natapp tunnels; change to https if you serve over TLS
+            domain = "http://" + domain;
+        }
+        // remove trailing slash if present
+        if (domain.endsWith("/")) {
+            domain = domain.substring(0, domain.length() - 1);
+        }
+        return domain + "/api/wechat/oauth/callback";
     }
 
     /**

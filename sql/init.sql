@@ -88,7 +88,7 @@ CREATE TABLE `alliance_application` (
     `id_back_image` LONGTEXT DEFAULT NULL COMMENT '身份证反面图片(base64)',
     `org_name` VARCHAR(100) DEFAULT NULL COMMENT '企业/学校名称',
     `credit_code` VARCHAR(50) DEFAULT NULL COMMENT '统一社会信用代码',
-    `license_image` TEXT DEFAULT NULL COMMENT '营业执照图片(base64)',
+    `license_image` LONGTEXT DEFAULT NULL COMMENT '营业执照图片(base64)',
     `job` VARCHAR(20) DEFAULT NULL COMMENT '申请人职务',
     `main_business` VARCHAR(200) DEFAULT NULL COMMENT '主营业务',
     `contact_name` VARCHAR(50) DEFAULT NULL COMMENT '联系人姓名',

@@ -61,6 +61,7 @@ public class UserServiceImpl implements UserService {
                 user.setIsDelete(0);
                 // 设置昵称和头像（如果提供）
                 if (request.getNickname() != null && !request.getNickname().isEmpty()) {
+                    System.out.println("Setting nickname: " + request.getNickname());
                     user.setNickname(request.getNickname());
                 }
                 if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
