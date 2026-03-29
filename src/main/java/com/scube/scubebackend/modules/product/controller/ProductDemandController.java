@@ -10,11 +10,13 @@ import com.scube.scubebackend.common.controller.BaseController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/product/demand")
+@Slf4j
 public class ProductDemandController extends BaseController {
 
     @Autowired
@@ -26,6 +28,7 @@ public class ProductDemandController extends BaseController {
     @PostMapping
     public BaseResponse<ProductDemandVO> createDemand(@RequestBody @Valid ProductDemandRequest request) {
         LoginUser loginUser = getLoginUser();
+        log.info("createDemand called by userId={}", loginUser != null ? loginUser.getId() : null);
         ProductDemandVO vo = demandService.createDemand(request, loginUser);
         return BaseResponse.success("发布成功", vo);
     }
@@ -60,6 +63,7 @@ public class ProductDemandController extends BaseController {
     @PutMapping("/{id}")
     public BaseResponse<ProductDemandVO> updateDemand(@PathVariable Long id, @RequestBody @Valid ProductDemandRequest request) {
         LoginUser loginUser = getLoginUser();
+        log.info("updateDemand called id={} by userId={}", id, loginUser != null ? loginUser.getId() : null);
         ProductDemandVO vo = demandService.updateDemand(id, request, loginUser);
         return BaseResponse.success("更新成功", vo);
     }
@@ -70,6 +74,7 @@ public class ProductDemandController extends BaseController {
     @DeleteMapping("/{id}")
     public BaseResponse<Boolean> deleteDemand(@PathVariable Long id) {
         LoginUser loginUser = getLoginUser();
+        log.info("deleteDemand called id={} by userId={}", id, loginUser != null ? loginUser.getId() : null);
         boolean ok = demandService.deleteDemand(id, loginUser);
         return BaseResponse.success(ok);
     }

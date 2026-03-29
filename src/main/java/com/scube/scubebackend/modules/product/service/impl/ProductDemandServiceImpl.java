@@ -13,15 +13,20 @@ import com.scube.scubebackend.modules.product.service.ProductDemandService;
 import com.scube.scubebackend.modules.user.model.dto.LoginUser;
 import com.scube.scubebackend.modules.user.mapper.UserMapper;
 import com.scube.scubebackend.modules.user.model.entity.User;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ProductDemandServiceImpl implements ProductDemandService {
 
     @Autowired
@@ -29,6 +34,9 @@ public class ProductDemandServiceImpl implements ProductDemandService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private DataSource dataSource;
 
     @Override
     public ProductDemandVO createDemand(ProductDemandRequest request, LoginUser loginUser) {
@@ -145,6 +153,13 @@ public class ProductDemandServiceImpl implements ProductDemandService {
 
     @Override
     public boolean deleteDemand(Long id, LoginUser loginUser) {
+        // Log JDBC URL to ensure we are connected to the expected database instance
+        try (Connection conn = dataSource.getConnection()) {
+            String jdbcUrl = conn.getMetaData().getURL();
+            log.info("DataSource JDBC URL: {}", jdbcUrl);
+        } catch (SQLException e) {
+            log.warn("Unable to get JDBC URL from DataSource: {}", e.getMessage());
+        }
         ProductDemand existing = demandMapper.selectById(id);
         if (existing == null || (existing.getIsDelete() != null && existing.getIsDelete() == 1)) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "需求不存在");
@@ -156,9 +171,20 @@ public class ProductDemandServiceImpl implements ProductDemandService {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限删除该需求");
         }
 
-        existing.setIsDelete(1);
-        existing.setUpdateTime(LocalDateTime.now());
-        int deleted = demandMapper.updateById(existing);
+        log.info("Deleting product demand id={} by userId={}. current isDelete={}", id, loginUser != null ? loginUser.getId() : null, existing.getIsDelete());
+        // Use a direct SQL update to avoid potential ORM caching or plugin issues
+        LocalDateTime now = LocalDateTime.now();
+        int deleted = demandMapper.markDeletedById(id, now);
+        log.info("markDeletedById affectedRows={}", deleted);
+        // re-select to verify DB state
+        try {
+            ProductDemand reloaded = demandMapper.selectById(id);
+            Integer reloadIsDelete = reloaded != null ? reloaded.getIsDelete() : null;
+            log.info("After update select id={} isDelete={}", id, reloadIsDelete);
+        } catch (Exception e) {
+            log.warn("Failed to re-select product demand id={} after update: {}", id, e.getMessage());
+        }
+
         if (deleted <= 0) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "删除需求失败");
         }
