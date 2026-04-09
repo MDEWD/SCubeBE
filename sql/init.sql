@@ -64,6 +64,7 @@ CREATE TABLE `product` (
     `high_speed_net_card` INT NULL COMMENT '高速网卡',
     `tag` VARCHAR(100) DEFAULT NULL COMMENT '标签',
     `comment` text DEFAULT NULL COMMENT '评语',
+    `is_homepage` VARCHAR(50) DEFAULT NULL COMMENT '是否展示在首页',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_product_id` (`product_id`),
     KEY `idx_user_id` (`user_id`),

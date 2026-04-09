@@ -87,10 +87,11 @@ public class ProductServiceImpl implements ProductService {
         } else {
             product.setStatus("PENDING");
         }
-        
-        // 设置默认值
-        if (product.getType() == null || product.getType().isEmpty()) {
-            product.setType("lease");
+        // 根据角色设置状态
+        if ("ADMIN".equals(loginUser.getUserRole())) {
+            product.setType("official");
+        } else {
+            product.setStatus("lease");
         }
         if (product.getGpuCount() == null) {
             product.setGpuCount(1);
@@ -224,51 +225,6 @@ public class ProductServiceImpl implements ProductService {
         product.setTag(joinTags(request.getTag()));
         product.setUpdateTime(LocalDateTime.now());
         productMapper.updateById(product);
-        
-        // 删除旧的关联数据
-//        LambdaQueryWrapper<ProductTag> tagWrapper = new LambdaQueryWrapper<>();
-//        tagWrapper.eq(ProductTag::getProductId, id);
-//        productTagMapper.delete(tagWrapper);
-//
-//        LambdaQueryWrapper<ProductImage> imageWrapper = new LambdaQueryWrapper<>();
-//        imageWrapper.eq(ProductImage::getProductId, id);
-//        productImageMapper.delete(imageWrapper);
-//
-//        LambdaQueryWrapper<ProductApplicationScene> sceneWrapper = new LambdaQueryWrapper<>();
-//        sceneWrapper.eq(ProductApplicationScene::getProductId, id);
-//        productApplicationSceneMapper.delete(sceneWrapper);
-        
-        // 插入新的关联数据
-//        if (request.getTag() != null && !request.getTag().isEmpty()) {
-//            for (String tag : request.getTag()) {
-//                ProductTag productTag = new ProductTag();
-//                productTag.setProductId(id);
-//                productTag.setTagName(tag);
-//                productTag.setCreateTime(LocalDateTime.now());
-//                productTagMapper.insert(productTag);
-//            }
-//        }
-
-//        if (request.getImages() != null && !request.getImages().isEmpty()) {
-//            for (int i = 0; i < request.getImages().size(); i++) {
-//                ProductImage productImage = new ProductImage();
-//                productImage.setProductId(id);
-//                productImage.setImageUrl(request.getImages().get(i));
-//                productImage.setSortOrder(i);
-//                productImage.setCreateTime(LocalDateTime.now());
-//                productImageMapper.insert(productImage);
-//            }
-//        }
-        
-//        if (request.getApplicationScenes() != null && !request.getApplicationScenes().isEmpty()) {
-//            for (String scene : request.getApplicationScenes()) {
-//                ProductApplicationScene sceneEntity = new ProductApplicationScene();
-//                sceneEntity.setProductId(id);
-//                sceneEntity.setSceneName(scene);
-//                sceneEntity.setCreateTime(LocalDateTime.now());
-//                productApplicationSceneMapper.insert(sceneEntity);
-//            }
-//        }
         
         clearProductCache();
         

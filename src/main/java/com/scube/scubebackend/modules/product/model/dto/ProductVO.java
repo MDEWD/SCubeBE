@@ -50,4 +50,5 @@ public class ProductVO {
     private Boolean isNew;
     private LocalDateTime createTime;
     private String comment;
+    private String isHomepage;
 }

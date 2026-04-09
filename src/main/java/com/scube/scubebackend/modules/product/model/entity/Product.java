@@ -82,4 +82,6 @@ public class Product {
     @TableField("is_delete")
     @TableLogic
     private Integer isDelete;
+
+    private String isHomepage;
 }

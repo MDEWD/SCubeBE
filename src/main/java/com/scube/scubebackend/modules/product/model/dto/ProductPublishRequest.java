@@ -56,4 +56,5 @@ public class ProductPublishRequest {
     private String dataCenterDescription;
     private List<String> dataCenterImages;
     private  String comment;
+    private String isHomepage;
 }

@@ -11,6 +11,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,8 @@ public class MarketController {
             @RequestParam(required = false) String region,
             @RequestParam(required = false) Integer gpuCount,
             @RequestParam(required = false) String gpuType,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String isHomepage,
             @RequestParam(required = false, defaultValue = "1") Integer page,
             @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
 
@@ -53,6 +56,12 @@ public class MarketController {
         }
         if (gpuType != null && !gpuType.isBlank()) {
             wrapper.eq(Product::getGpuType, gpuType);
+        }
+        if (type != null && !type.isBlank()) {
+            wrapper.eq(Product::getType, type);
+        }
+        if (isHomepage != null && !isHomepage.isBlank()) {
+            wrapper.eq(Product::getIsHomepage, isHomepage);
         }
         if (gpuCount != null) {
             wrapper.eq(Product::getGpuCount, gpuCount);
@@ -76,8 +85,19 @@ public class MarketController {
 
     private ProductVO toVO(Product product) {
         ProductVO vo = new ProductVO();
+        vo.setTag(splitTags(product.getTag()));
         BeanUtils.copyProperties(product, vo);
         return vo;
+    }
+
+    private List<String> splitTags(String tagsText) {
+        if (tagsText == null || tagsText.isBlank()) {
+            return Collections.emptyList();
+        }
+        return java.util.Arrays.stream(tagsText.split(","))
+                .map(String::trim)
+                .filter(tag -> !tag.isBlank())
+                .collect(Collectors.toList());
     }
 }
 

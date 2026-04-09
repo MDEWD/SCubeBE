@@ -37,6 +37,7 @@
         <result column="tag" property="tag" />
         <result column="comment" property="comment" />
         <result column="pay_mode" property="payMode" />
+        <result column="is_homepage" property="isHomepage" />
     </resultMap>
     
     <!-- 基础列 -->
@@ -44,7 +45,7 @@
         id, user_id, name, model, product_id, gpu_type, stock, gpu_count, cpu, memory, system_disk,
         storage, bandwidth, max_cuda_version, driver_version, monthly_price, region,
         position, type, status, rating, view_count, is_hot, is_new,
-        create_time, update_time, is_delete, high_speed_net_card, tag, pay_mode
+        create_time, update_time, is_delete, high_speed_net_card, tag, pay_mode, is_homepage
     </sql>
     
     <!-- 更新浏览量 -->
