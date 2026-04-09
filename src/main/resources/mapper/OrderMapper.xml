@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scube.scubebackend.modules.order.mapper.OrderMapper">
+
+    <select id="selectPartnerOrders" resultType="com.scube.scubebackend.modules.order.model.dto.PartnerOrdersResponse$PartnerOrderVO">
+        SELECT
+            o.order_no as id,
+            o.supplier_name as supplierName,
+            DATE_FORMAT(o.start_time, '%Y-%m-%d') as startDate,
+            DATE_FORMAT(o.end_time, '%Y-%m-%d') as endDate,
+            o.customer_amount as customerAmount,
+            o.customer_total_amount as customerTotalAmount,
+            o.payment_method as paymentMethod,
+            o.contact as contact
+        FROM `order` o
+        WHERE o.supplier_display_id = #{supplierDisplayId}
+          AND o.is_delete = 0
+        ORDER BY o.create_time DESC
+    </select>
+
+    <select id="selectAdminOrders" resultType="com.scube.scubebackend.modules.order.model.dto.AdminOrderVO">
+        SELECT
+            o.order_no as id,
+            cust.nickname as customerName,
+            p.name as customerProduct,
+            DATE_FORMAT(o.start_time, '%Y-%m-%d') as customerStartDate,
+            DATE_FORMAT(o.end_time, '%Y-%m-%d') as customerEndDate,
+            '月付' as customerPaymentMethod,
+            'System' as customerContact,
+            supp.nickname as supplierName,
+            DATE_FORMAT(o.start_time, '%Y-%m-%d') as supplierStartDate,
+            DATE_FORMAT(o.end_time, '%Y-%m-%d') as supplierEndDate,
+            '季付' as supplierPaymentMethod,
+            'System' as supplierContact
+        FROM `order` o
+        LEFT JOIN `user` cust ON o.user_id = cust.id
+        LEFT JOIN `product` p ON o.product_id = p.id
+        LEFT JOIN `user` supp ON p.user_id = supp.id
+        WHERE o.is_delete = 0
+        ORDER BY o.create_time DESC
+    </select>
+
+    <select id="selectUserOrdersByDisplayId" resultType="com.scube.scubebackend.modules.order.model.dto.CustomerOrdersResponse$CustomerOrderVO">
+        SELECT
+            o.order_no as id,
+            o.product_id as productId,
+            o.customer_product as customerProduct,
+            DATE_FORMAT(o.start_time, '%Y-%m-%d') as startDate,
+            DATE_FORMAT(o.end_time, '%Y-%m-%d') as endDate,
+            o.customer_product_quantity as customerProductQuantity,
+            o.customer_amount as customerAmount,
+            o.customer_total_amount as customerTotalAmount,
+            o.payment_method as paymentMethod,
+            o.remark as remark,
+            o.contact as contact
+        FROM `order` o
+        WHERE o.user_display_id = #{userDisplayId}
+          AND o.is_delete = 0
+        ORDER BY o.create_time DESC
+    </select>
+
+</mapper>
+

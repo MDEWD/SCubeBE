@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scube.scubebackend.modules.alliance.mapper.AllianceApplicationMapper">
+
+    <resultMap id="BaseResultMap" type="com.scube.scubebackend.modules.alliance.model.entity.AllianceApplication">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="user_display_id" property="userDisplayId" />
+        <result column="kind" property="kind" />
+        <result column="real_name" property="realName" />
+        <result column="phone" property="phone" />
+        <result column="id_number" property="idNumber" />
+        <result column="id_front_image" property="idFrontImage" />
+        <result column="id_back_image" property="idBackImage" />
+        <result column="org_name" property="orgName" />
+        <result column="credit_code" property="creditCode" />
+        <result column="license_image" property="licenseImage" />
+        <result column="job" property="job" />
+        <result column="main_business" property="mainBusiness" />
+        <result column="contact_name" property="contactName" />
+        <result column="contact_method" property="contactMethod" />
+        <result column="status" property="status" />
+        <result column="reject_reason" property="rejectReason" />
+        <result column="review_time" property="reviewTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="is_delete" property="isDelete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, user_display_id, kind, real_name, phone, id_number, id_front_image,
+        id_back_image, org_name, credit_code, license_image, job, main_business, contact_name,
+        contact_method, status, reject_reason, review_time, create_time, update_time, is_delete
+    </sql>
+
+    <select id="selectLatestByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM alliance_application
+        WHERE user_id = #{userId} AND is_delete = 0
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+</mapper>
+

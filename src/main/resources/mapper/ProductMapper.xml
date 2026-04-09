@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scube.scubebackend.modules.product.mapper.ProductMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.scube.scubebackend.modules.product.model.entity.Product">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="name" property="name" />
+        <result column="model" property="model" />
+        <result column="product_id" property="productId" />
+        <result column="gpu_brand" property="gpuBrand" />
+        <result column="gpu_type" property="gpuType" />
+        <result column="stock" property="stock" />
+        <result column="gpu_count" property="gpuCount" />
+        <result column="cpu" property="cpu" />
+        <result column="cpu_kernel" property="cpuKernel" />
+        <result column="memory" property="memory" />
+        <result column="system_disk" property="systemDisk" />
+        <result column="storage" property="storage" />
+        <result column="bandwidth" property="bandwidth" />
+        <result column="max_cuda_version" property="maxCudaVersion" />
+        <result column="driver_version" property="driverVersion" />
+        <result column="monthly_price" property="monthlyPrice" />
+        <result column="region" property="region" />
+        <result column="position" property="position" />
+        <result column="type" property="type" />
+        <result column="status" property="status" />
+        <result column="rating" property="rating" />
+        <result column="view_count" property="viewCount" />
+        <result column="is_hot" property="isHot" />
+        <result column="is_new" property="isNew" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="is_delete" property="isDelete" />
+        <result column="high_speed_net_card" property="highSpeedNetCard" />
+        <result column="tag" property="tag" />
+        <result column="comment" property="comment" />
+        <result column="pay_mode" property="payMode" />
+        <result column="is_homepage" property="isHomepage" />
+    </resultMap>
+    
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, user_id, name, model, product_id, gpu_type, stock, gpu_count, cpu, memory, system_disk,
+        storage, bandwidth, max_cuda_version, driver_version, monthly_price, region,
+        position, type, status, rating, view_count, is_hot, is_new,
+        create_time, update_time, is_delete, high_speed_net_card, tag, pay_mode, is_homepage
+    </sql>
+    
+    <!-- 更新浏览量 -->
+    <update id="incrementViewCount">
+        UPDATE product
+        SET view_count = view_count + 1
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 根据用户ID查询商品列表 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM product
+        WHERE user_id = #{userId} AND is_delete = 0
+        ORDER BY create_time DESC
+    </select>
+    
+    <!-- 检查ProductId是否已存在 -->
+    <select id="existsByProductId" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM product
+        WHERE product_id = #{productId} AND is_delete = 0
+    </select>
+</mapper>

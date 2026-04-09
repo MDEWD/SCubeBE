@@ -5,26 +5,31 @@ spring:
     active: dev
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/scube?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root
-    password: root
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:scube}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
   data:
     redis:
-      host: localhost
-      port: 6379
-      password:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
       database: 0
       timeout: 3000ms
 
 server:
-  port: 8077
+  port: ${SERVER_PORT:8077}
 
 wechat:
   mp:
-    app-id: your-app-id
-    secret: your-secret
-    token: your-token
-    aes-key: your-aes-key
+    # 微信测试号配置（从 https://mp.weixin.qq.com/debug/cgi-bin/sandboxinfo 获取）
+#    app-id: ${WECHAT_MP_APPID:wxc590a385d7af62a0}                    # 生产号AppID
+#    secret: ${WECHAT_MP_SECRET:b88ce048079df8f9e58971442969132f}      # 生产号AppSecret
+    app-id: ${WECHAT_MP_APPID:wxf10bccf1a861aeb7}                     # 测试号AppID
+    secret: ${WECHAT_MP_SECRET:832b070364fdd4a6c83da1fbd8a0299f}     # 测试号AppSecret
+    token: ${WECHAT_MP_TOKEN:123456}                                  # 自定义Token（用于验证签名，需与测试号后台配置一致）
+    aes-key: ftnxes1EdmEPbUBGEuxENLvz5C8hg72q09SGnyECAuN                                      # 消息加解密密钥（可选，测试环境可以不填）
+#    aes-key:
+    oauth-domain: ${WECHAT_MP_OAUTH_DOMAIN:j4356948.natappfree.cc}          # OAuth回调域名（本地开发使用localhost，生产环境需要公网域名）
 
 jwt:
   secret: scube-secret-key-for-jwt-token-generation-minimum-256-bits
@@ -34,6 +39,7 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mapper/**/*.xml
   global-config:
     db-config:
       logic-delete-field: isDelete
