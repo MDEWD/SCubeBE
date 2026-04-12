@@ -174,9 +174,10 @@ public class UserServiceImpl implements UserService {
         List<AdminUserVO> voList = resultPage.getRecords().stream().map(user -> {
             AdminUserVO vo = new AdminUserVO();
             vo.setId(String.valueOf(user.getId()));
-            vo.setName(user.getNickname());
+            vo.setNickname(user.getNickname());
+            vo.setDisplayId(user.getDisplayId());
             vo.setEmail(""); // Email not in DB
-            vo.setRole(user.getUserRole());
+            vo.setUserRole(user.getUserRole());
             vo.setJoinDate(user.getCreateTime() != null ? user.getCreateTime().toString().split("T")[0] : "");
             return vo;
         }).collect(Collectors.toList());

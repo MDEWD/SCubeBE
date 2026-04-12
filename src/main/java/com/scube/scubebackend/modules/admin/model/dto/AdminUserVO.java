@@ -5,8 +5,9 @@ import lombok.Data;
 @Data
 public class AdminUserVO {
     private String id;
-    private String name;
+    private String displayId;
+    private String nickname;
     private String email;
-    private String role;
+    private String userRole;
     private String joinDate;
 }
