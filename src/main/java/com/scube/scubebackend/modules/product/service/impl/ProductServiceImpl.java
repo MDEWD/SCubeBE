@@ -84,15 +84,12 @@ public class ProductServiceImpl implements ProductService {
         // 根据角色设置状态
         if ("ADMIN".equals(loginUser.getUserRole())) {
             product.setStatus("ACTIVE");
-        } else {
-            product.setStatus("PENDING");
-        }
-        // 根据角色设置状态
-        if ("ADMIN".equals(loginUser.getUserRole())) {
             product.setType("official");
         } else {
-            product.setStatus("lease");
+            product.setStatus("PENDING");
+            product.setType("lease");
         }
+
         if (product.getGpuCount() == null) {
             product.setGpuCount(1);
         }
@@ -494,5 +491,145 @@ public class ProductServiceImpl implements ProductService {
             isUnique = !productMapper.existsByProductId(productId);
         } while (!isUnique);
         return productId;
+    }
+
+    @Override
+    public PageResult<ProductVO> getOtherProductsForAdmin(LoginUser loginUser, MyProductQueryRequest request) {
+        if (loginUser == null || loginUser.getId() == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "未登录");
+        }
+        if (!"ADMIN".equalsIgnoreCase(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限");
+        }
+
+        Integer page = request != null ? request.getPage() : null;
+        Integer size = request != null ? request.getPageSize() : null;
+        if (page == null || page < 1) {
+            page = 1;
+        }
+        if (size == null || size < 1) {
+            size = 20;
+        }
+
+        Page<Product> pageParam = new Page<>(page, size);
+        LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.ne(Product::getUserId, loginUser.getId())
+                .eq(Product::getIsDelete, 0);
+
+        if (request != null && request.getGpuTypes() != null && !request.getGpuTypes().isEmpty()) {
+            queryWrapper.in(Product::getGpuType, request.getGpuTypes());
+        }
+
+        LocalDateTime startTime = parseStartTime(request != null ? request.getPublishTimeStart() : null);
+        LocalDateTime endTime = parseEndTime(request != null ? request.getPublishTimeEnd() : null);
+        if (startTime != null && endTime != null && endTime.isBefore(startTime)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "publishTimeEnd不能早于publishTimeStart");
+        }
+        if (startTime != null) {
+            queryWrapper.ge(Product::getCreateTime, startTime);
+        }
+        if (endTime != null) {
+            queryWrapper.le(Product::getCreateTime, endTime);
+        }
+
+        queryWrapper.orderByDesc(Product::getCreateTime);
+
+        Page<Product> productPage = productMapper.selectPage(pageParam, queryWrapper);
+
+        List<ProductVO> voList = productPage.getRecords().stream()
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
+
+        return new PageResult<>(
+                voList,
+                productPage.getTotal(),
+                (long) page,
+                (long) size
+        );
+    }
+
+    @Override
+    public PageResult<ProductVO> getPendingProductsForAdmin(Integer page, Integer size) {
+        LoginUser loginUser = UserContext.getUser();
+        if (loginUser == null || !"ADMIN".equalsIgnoreCase(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限");
+        }
+
+        int safePage = page == null || page < 1 ? 1 : page;
+        int safeSize = size == null || size < 1 ? 20 : size;
+
+        Page<Product> pageParam = new Page<>(safePage, safeSize);
+        LambdaQueryWrapper<Product> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Product::getIsDelete, 0)
+                .eq(Product::getStatus, "PENDING")
+                .orderByAsc(Product::getCreateTime);
+
+        Page<Product> productPage = productMapper.selectPage(pageParam, queryWrapper);
+
+        List<ProductVO> items = productPage.getRecords().stream()
+                .map(product -> {
+                    ProductVO vo = convertToVO(product);
+                    User user = userMapper.selectById(product.getUserId());
+                    if (user != null) {
+                        setUserDisplayIdIfPresent(vo, user.getDisplayId());
+                    }
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        return new PageResult<>(items, productPage.getTotal(), (long) safePage, (long) safeSize);
+    }
+
+    private void setUserDisplayIdIfPresent(ProductVO vo, String displayId) {
+        if (vo == null) {
+            return;
+        }
+        try {
+            java.lang.reflect.Field field = vo.getClass().getDeclaredField("userDisplayId");
+            field.setAccessible(true);
+            field.set(vo, displayId);
+        } catch (NoSuchFieldException ignored) {
+        } catch (IllegalAccessException ignored) {
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ProductVO auditProductForAdmin(Long id, String action) {
+        LoginUser loginUser = UserContext.getUser();
+        if (loginUser == null || !"ADMIN".equalsIgnoreCase(loginUser.getUserRole())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限");
+        }
+        if (id == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "id不能为空");
+        }
+        if (action == null || action.isBlank()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "action不能为空");
+        }
+
+        String normalized = action.trim().toLowerCase();
+        String nextStatus;
+        if ("approve".equals(normalized) || "approved".equals(normalized) || "active".equals(normalized)) {
+            nextStatus = "ACTIVE";
+        } else if ("reject".equals(normalized) || "rejected".equals(normalized)) {
+            nextStatus = "REJECTED";
+        } else {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "action仅支持approve或reject");
+        }
+
+        Product product = productMapper.selectById(id);
+        if (product == null || (product.getIsDelete() != null && product.getIsDelete() == 1)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "商品不存在");
+        }
+        if (!"PENDING".equalsIgnoreCase(product.getStatus())) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "仅可审核待审核(PENDING)商品");
+        }
+
+        product.setStatus(nextStatus);
+        product.setUpdateTime(LocalDateTime.now());
+        productMapper.updateById(product);
+        clearProductCache();
+
+        return convertToVO(product);
     }
 }

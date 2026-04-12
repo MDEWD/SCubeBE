@@ -29,7 +29,7 @@ wechat:
     token: ${WECHAT_MP_TOKEN:123456}                                  # 自定义Token（用于验证签名，需与测试号后台配置一致）
     aes-key: ftnxes1EdmEPbUBGEuxENLvz5C8hg72q09SGnyECAuN                                      # 消息加解密密钥（可选，测试环境可以不填）
 #    aes-key:
-    oauth-domain: ${WECHAT_MP_OAUTH_DOMAIN:j4356948.natappfree.cc}          # OAuth回调域名（本地开发使用localhost，生产环境需要公网域名）
+    oauth-domain: ${WECHAT_MP_OAUTH_DOMAIN:c42dd59a.natappfree.cc}          # OAuth回调域名（本地开发使用localhost，生产环境需要公网域名）
 
 jwt:
   secret: scube-secret-key-for-jwt-token-generation-minimum-256-bits
